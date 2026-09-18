@@ -2,29 +2,28 @@
 <html lang="kk">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>S7 Robotics — LMS Platform</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 </head>
 <body>
 
-    <!-- АВТОРИЗАЦИЯ ЖӘНЕ ТІРКЕЛУ ЭКРАНЫ -->
+    <!-- АВТОРИЗАЦИЯ ЖӘНЕ ТІРКЕЛУ -->
     <div id="authContainer" class="auth-wrapper">
-        <div class="auth-card duo-card">
+        <div class="auth-card">
             <h2>S7 <span>ROBOTICS</span></h2>
             
-            <!-- Табтар: Кіру / Тіркелу -->
-            <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+            <div style="display: flex; gap: 10px; margin-bottom: 20px; margin-top: 15px;">
                 <button type="button" id="loginTabBtn" class="duo-btn duo-btn-primary" style="flex: 1;" onclick="switchAuthMode('login')">Кіру</button>
                 <button type="button" id="regTabBtn" class="duo-btn duo-btn-gray" style="flex: 1;" onclick="switchAuthMode('register')">Тіркелу</button>
             </div>
 
-            <!-- 1. КІРУ ФОРМАСЫ (LOGIN) -->
+            <!-- 1. КІРУ -->
             <form id="loginForm" onsubmit="handleLogin(event)">
                 <div class="form-group">
                     <label>Email немесе Телефон:</label>
-                    <input type="text" id="loginIdentifier" placeholder="example@mail.com немесе +77071234567" required>
+                    <input type="text" id="loginIdentifier" placeholder="example@mail.com" required>
                 </div>
 
                 <div class="form-group">
@@ -35,11 +34,11 @@
                 <button type="submit" class="duo-btn duo-btn-green w-100">Войти 🚀</button>
             </form>
 
-            <!-- 2. ТІРКЕЛУ ФОРМАСЫ (REGISTER) -->
+            <!-- 2. ТІРКЕЛУ -->
             <form id="regForm" onsubmit="handleRegister(event)" style="display: none;">
                 <div class="form-group">
                     <label>Рөлді таңдаңыз:</label>
-                    <select id="regRole" onchange="toggleMentorPasswordInput()" required>
+                    <select id="regRole" required>
                         <option value="student">👨‍🎓 Студент</option>
                         <option value="mentor">👨‍🏫 Ментор</option>
                     </select>
@@ -65,11 +64,6 @@
                     <input type="password" id="regPassword" placeholder="Кемінде 4 таңба" required>
                 </div>
 
-                <div class="form-group" id="mentorPasswordGroup" style="display: none;">
-                    <label>🔒 Ментордың арнайы коды:</label>
-                    <input type="password" id="mentorSecret" placeholder="Арнайы кодты енгізіңіз">
-                </div>
-
                 <button type="submit" class="duo-btn duo-btn-green w-100">Тіркелу ✨</button>
             </form>
         </div>
@@ -85,24 +79,35 @@
                 <div class="stat-item">🔥 <span id="streakCount">1</span> күн</div>
                 <div class="stat-item">⚡ <span id="xpCount">0</span> XP</div>
                 <div class="stat-item">👤 <span id="studentNameDisplay">Оқушы</span></div>
-                <button class="logout-btn" onclick="logout()">Шығу 🚪</button>
+                <button class="duo-btn duo-btn-gray" style="padding: 5px 10px;" onclick="logout()">Шығу 🚪</button>
             </div>
         </header>
 
         <div class="container">
             <div class="duo-layout">
-                <div class="lesson-map">
-                    <h2 class="section-title">🤖 Arduino IDE Оқу Картасы</h2>
+                <div class="lesson-map duo-card">
+                    <h2>🤖 Arduino IDE & IoT Оқу Картасы</h2>
                     <div id="lessonsContainer" class="lessons-tree"></div>
                 </div>
 
                 <div class="sidebar">
+                    <!-- МЕНТОР ҚОСУ БӨЛІМІ -->
+                    <div class="duo-card">
+                        <h3>👨‍🏫 Менторға байланысу</h3>
+                        <div id="mentorStatusBox" style="margin-top: 10px;">
+                            <form onsubmit="sendMentorRequest(event)">
+                                <div class="form-group">
+                                    <label>Ментордың Email-ын жазыңыз:</label>
+                                    <input type="email" id="targetMentorEmail" placeholder="mentor@mail.com" required>
+                                </div>
+                                <button type="submit" class="duo-btn duo-btn-primary w-100">Запрос жіберу 📩</button>
+                            </form>
+                        </div>
+                    </div>
+
                     <div class="duo-card">
                         <h3>🏆 Лига Рейтингі</h3>
                         <p>Мәртебеңіз: <strong>Белсенді оқушы</strong></p>
-                        <div class="progress-bar-container">
-                            <div class="progress-bar" style="width: 40%;"></div>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -117,22 +122,27 @@
             </div>
             <div class="duo-stats">
                 <div class="stat-item">👨‍🏫 <span id="mentorNameDisplay">Ментор</span></div>
-                <button class="logout-btn" onclick="logout()">Шығу 🚪</button>
+                <button class="duo-btn duo-btn-gray" style="padding: 5px 10px;" onclick="logout()">Шығу 🚪</button>
             </div>
         </header>
 
         <div class="container">
+            <!-- 1. СТУДЕНТТЕРДЕН ТҮСКЕН ЗАПРОСТАР -->
             <div class="duo-card">
-                <h3>📋 Тексеруге түскен студенттердің тапсырмалары</h3>
+                <h3>📩 Студенттерден түскен запростар</h3>
+                <div id="mentorRequestsList" style="margin-top: 10px;"></div>
+            </div>
+
+            <!-- 2. ЖІБЕРІЛГЕН ТАПСЫРМАЛАР ТАБЛИЦАСЫ -->
+            <div class="duo-card">
+                <h3>📋 Тексеруге түскен тапсырмалар</h3>
                 <table class="duo-table">
                     <thead>
                         <tr>
                             <th>Студент</th>
-                            <th>Байланыс</th>
                             <th>Тапсырма</th>
                             <th>Сілтеме</th>
                             <th>Код</th>
-                            <th>Мәртебесі</th>
                             <th>Әрекет</th>
                         </tr>
                     </thead>
@@ -143,32 +153,30 @@
     </div>
 
     <!-- САБАҚ MODAL -->
-    <div id="lessonModal" class="modal">
-        <div class="modal-content duo-card" style="max-width: 650px;">
+    <div id="lessonModal" class="modal" style="display: none;">
+        <div class="modal-content duo-card">
             <span class="close-btn" onclick="closeLessonModal()">&times;</span>
             <h2 id="modalTitle">Сабақ</h2>
-            <p id="modalDesc" class="subtitle" style="text-align: left;"></p>
+            <p id="modalDesc" style="margin: 10px 0; color: #94a3b8;"></p>
             
             <label><strong>📌 Үлгі код:</strong></label>
             <div class="code-box"><pre><code id="modalCode"></code></pre></div>
 
             <form id="submissionForm" onsubmit="submitProject(event)">
                 <div class="form-group">
-                    <label>💻 Өз кодыңызды жазыңыз және тексеріңіз:</label>
-                    <textarea id="projectCode" rows="6" style="font-family: monospace; background: #0f172a; color: #38bdf8; padding: 10px;" required placeholder="C++ / Arduino кодын осы жерге жазыңыз..."></textarea>
+                    <label>💻 Өз кодыңызды жазыңыз:</label>
+                    <textarea id="projectCode" rows="5" required placeholder="C++ / Arduino кодын осы жерге жазыңыз..."></textarea>
                 </div>
 
-                <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-                    <button type="button" class="duo-btn duo-btn-primary" onclick="testCodeRun()" style="flex: 1;">⚡ Кодты синтаксиске тексеру</button>
-                </div>
-                <div id="compilerConsole" style="display: none; padding: 10px; border-radius: 8px; font-size: 13px; font-family: monospace; margin-bottom: 15px;"></div>
+                <button type="button" class="duo-btn duo-btn-primary w-100" onclick="testCodeRun()" style="margin-bottom: 10px;">⚡ Кодты синтаксиске тексеру</button>
+                <div id="compilerConsole" style="display: none; padding: 10px; border-radius: 8px; font-size: 13px; margin-bottom: 10px;"></div>
 
                 <div class="form-group">
                     <label>🔗 Жоба симуляциясының сілтемесі (Wokwi / Tinkercad):</label>
                     <input type="url" id="projectMedia" required placeholder="https://wokwi.com/projects/...">
                 </div>
 
-                <button type="submit" id="submitBtn" class="duo-btn duo-btn-green w-100">Менторға жіберу (+50 XP) 🚀</button>
+                <button type="submit" class="duo-btn duo-btn-green w-100">Менторға жіберу (+50 XP) 🚀</button>
             </form>
         </div>
     </div>
