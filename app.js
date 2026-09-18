@@ -1,7 +1,10 @@
+// МЕНТОР ТІРКЕЛУ ШҮІН АРНАЙЫ ҚҰПИЯ КОД (ОСЫ КОДТЫ ОЗГЕРТСЕНІЗ БОЛАДЫ)
+const MENTOR_SECRET_CODE = "admin";
+
 // 8 ТОЛЫҚ САБАҚ ТІЗІМІ
 const defaultLessons = [
     { id: 1, title: "1. LED Blink", desc: "13-пиндегі диодты жыпылықтату.", icon: "💡", status: "active", code: "void setup() {\n  pinMode(13, OUTPUT);\n}\nvoid loop() {\n  digitalWrite(13, HIGH);\n  delay(1000);\n  digitalWrite(13, LOW);\n  delay(1000);\n}" },
-    { id: 2, title: "2. Button & LED", desc: "Батырма арқылы диодты қосу.", icon: "🔘", status: "locked", code: "int btn = 2, led = 13;\nvoid setup() {\n  pinMode(led, OUTPUT);\n  pinMode(btn, INPUT);\n}\nvoid loop() {\n  if(digitalRead(btn) == HIGH) digitalWrite(led, HIGH);\n  else digitalWrite(led, LOW);\n}" },
+    { id: 2, title: "2. Button & LED", desc: "Батырма арқылы диодты қосу.", icon: "locked", status: "locked", code: "int btn = 2, led = 13;\nvoid setup() {\n  pinMode(led, OUTPUT);\n  pinMode(btn, INPUT);\n}\nvoid loop() {\n  if(digitalRead(btn) == HIGH) digitalWrite(led, HIGH);\n  else digitalWrite(led, LOW);\n}" },
     { id: 3, title: "3. Potentiometer PWM", desc: "Аналогты сигналмен LED жарықтығын реттеу.", icon: "🎛️", status: "locked", code: "void setup() { pinMode(9, OUTPUT); }\nvoid loop() { analogWrite(9, analogRead(A0)/4); }" },
     { id: 4, title: "4. Servo Motor Control", desc: "Сервомоторды 0-ден 180 градусқа бұру.", icon: "🦾", status: "locked", code: "#include <Servo.h>\nServo myservo;\nvoid setup() { myservo.attach(9); }\nvoid loop() { myservo.write(90); delay(1000); myservo.write(0); delay(1000); }" },
     { id: 5, title: "5. Ultrasonic Sensor HC-SR04", desc: "Ультратавыш сенсорымен қашықтықты өлшеу.", icon: "📏", status: "locked", code: "int trig=9, echo=10;\nvoid setup() {\n  pinMode(trig, OUTPUT); pinMode(echo, INPUT);\n  Serial.begin(9600);\n}\nvoid loop() {\n  digitalWrite(trig, LOW); delayMicroseconds(2);\n  digitalWrite(trig, HIGH); delayMicroseconds(10);\n  digitalWrite(trig, LOW);\n  long duration = pulseIn(echo, HIGH);\n  int distance = duration * 0.034 / 2;\n  Serial.println(distance);\n  delay(500);\n}" },
@@ -10,8 +13,8 @@ const defaultLessons = [
     { id: 8, title: "8. TDS Water Sensor", desc: "Су сапасын (TDS) өлшеу сенсоры.", icon: "💧", status: "locked", code: "void setup() { Serial.begin(9600); }\nvoid loop() {\n  int val = analogRead(A0);\n  Serial.print(\"TDS Value: \"); Serial.println(val);\n  delay(1000);\n}" }
 ];
 
-// База нұсқасын v9-ға жаңартып, 8 сабақтың бәрін қамтамасыз етеміз
-let appState = JSON.parse(localStorage.getItem("s7_lms_db_v9")) || {
+// База нұсқасы v10
+let appState = JSON.parse(localStorage.getItem("s7_lms_db_v10")) || {
     users: [],          
     currentUser: null,  
     mentorRequests: [], 
@@ -22,13 +25,8 @@ let appState = JSON.parse(localStorage.getItem("s7_lms_db_v9")) || {
     submissions: []
 };
 
-// Бұрынғы сабақтар 3 болып қалған болса, 8 сабаққа толтыру
-if (!appState.lessons || appState.lessons.length < 8) {
-    appState.lessons = defaultLessons;
-}
-
 function saveData() {
-    localStorage.setItem("s7_lms_db_v9", JSON.stringify(appState));
+    localStorage.setItem("s7_lms_db_v10", JSON.stringify(appState));
 }
 
 window.onload = function() { checkSession(); };
@@ -70,7 +68,14 @@ function switchAuthMode(mode) {
     }
 }
 
-// 1. ТІРКЕЛУ ЖӘНЕ КІРУ
+// Ментор таңдалғанда құпия код өрісін ашу/жабу
+function toggleMentorSecretInput() {
+    const role = document.getElementById("regRole").value;
+    const secretGroup = document.getElementById("mentorSecretGroup");
+    secretGroup.style.display = (role === "mentor") ? "block" : "none";
+}
+
+// 1. ТІРКЕЛУ (МЕНТОР ҚҰПИЯ КОДЫМЕН ТЕКСЕРУ)
 function handleRegister(e) {
     e.preventDefault();
     const role = document.getElementById("regRole").value;
@@ -78,6 +83,15 @@ function handleRegister(e) {
     const email = document.getElementById("regEmail").value.trim().toLowerCase();
     const phone = document.getElementById("regPhone").value.trim();
     const password = document.getElementById("regPassword").value.trim();
+    const secretKey = document.getElementById("mentorSecretKey").value.trim();
+
+    // Егер Ментор таңдалса, құпия кодты тексеру
+    if (role === "mentor") {
+        if (secretKey !== MENTOR_SECRET_CODE) {
+            alert("❌ Ментордың арнайы құпия коды қате! (Әдепкі код: admin)");
+            return;
+        }
+    }
 
     if (appState.users.some(u => u.email === email)) {
         alert("⚠️ Бұл email бұрын тіркелген!");
@@ -235,7 +249,6 @@ function openLessonModal(id) {
     document.getElementById("modalCode").innerText = lesson.code;
     document.getElementById("compilerConsole").style.display = "none";
 
-    // Тексеру: Бұл студент сабаққа жауап жіберіп қойған ба?
     const hasSubmitted = appState.submissions.some(s => s.studentEmail === appState.currentUser.email && s.lessonTitle === lesson.title);
 
     const form = document.getElementById("submissionForm");
@@ -291,7 +304,7 @@ function submitProject(e) {
     closeLessonModal();
 }
 
-// 6. МЕНТОР ТАБЛИЦАСЫ ЖӘНЕ КОДТЫ МOДАЛЬМЕН КӨРУ
+// 6. МЕНТОР ТАБЛИЦАСЫ ЖӘНЕ КОДТЫ КӨРУ
 function renderMentorTable() {
     const tbody = document.getElementById("mentorTableBody");
     tbody.innerHTML = "";
@@ -311,7 +324,6 @@ function renderMentorTable() {
     });
 }
 
-// Менторға студенттің кодын модальда ашып көрсету
 function viewStudentCode(name, lesson, id) {
     const sub = appState.submissions.find(s => s.id === id);
     if (sub) {
