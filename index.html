@@ -6,6 +6,10 @@
     <title>S7 Robotics — LMS Platform</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <!-- Firebase Бұлтты База Біріктіру Скрипттері -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 </head>
 <body>
 
@@ -29,25 +33,18 @@
                     <label>Құпия сөз (Пароль):</label>
                     <input type="password" id="loginPassword" placeholder="Пароліңізді енгізіңіз" required>
                 </div>
-                <button type="submit" class="duo-btn duo-btn-green w-100">Войти 🚀</button>
+                <button type="submit" class="duo-btn duo-btn-green w-100">Кіру 🚀</button>
             </form>
 
             <!-- 2. ТІРКЕЛУ ФОРМАСЫ -->
             <form id="regForm" onsubmit="handleRegister(event)" style="display: none;">
                 <div class="form-group">
                     <label>Рөлді таңдаңыз:</label>
-                    <select id="regRole" onchange="toggleMentorSecretInput()" required>
+                    <select id="regRole" required>
                         <option value="student">👨‍🎓 Студент</option>
                         <option value="mentor">👨‍🏫 Ментор</option>
                     </select>
                 </div>
-
-                <!-- МЕНТОРДЫҢ АРНАЙЫ ҚҰПИЯ КОДЫ (ТЕК МЕНТОР ТАҢДАЛҒАНДА КӨРІНЕДІ) -->
-                <div class="form-group" id="mentorSecretGroup" style="display: none;">
-                    <label>🔑 Ментордың арнайы құпия коды:</label>
-                    <input type="password" id="mentorSecretKey" placeholder="Арнайы кодты енгізіңіз (мыс: admin)">
-                </div>
-
                 <div class="form-group">
                     <label>Аты-жөніңіз:</label>
                     <input type="text" id="regName" placeholder="Арман Қасымов" required>
