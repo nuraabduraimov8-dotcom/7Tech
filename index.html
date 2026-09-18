@@ -6,23 +6,16 @@
     <title>S7 Robotics — LMS Platform</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
-    <!-- EmailJS скрипті (Почтаға код жіберу үшін) -->
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
-    <script type="text/javascript">
-        (function(){
-            emailjs.init("YOUR_PUBLIC_KEY"); // Осы жерге EmailJS Public Key қойылады
-        })();
-    </script>
 </head>
 <body>
 
-    <!-- 1. ТІРКЕЛУ ЖӘНЕ ПОЧТАҒА КОД ЖІБЕРУ ЭКРАНЫ -->
+    <!-- 1. АВТОРИЗАЦИЯ ЖӘНЕ НӨМІР ЕНГІЗУ ЭКРАНЫ -->
     <div id="authContainer" class="auth-wrapper">
         <div class="auth-card duo-card">
             <h2>S7 <span>ROBOTICS</span></h2>
-            <p class="subtitle">Платформаға кіру үшін деректеріңізді енгізіңіз</p>
+            <p class="subtitle">Платформаға кіру үшін нөміріңізді енгізіңіз</p>
 
-            <form id="authForm" onsubmit="handleSendCode(event)">
+            <form id="authForm" onsubmit="handleSendSms(event)">
                 <div class="form-group">
                     <label>Рөлді таңдаңыз:</label>
                     <select id="authRole" onchange="toggleMentorPasswordInput()" required>
@@ -42,7 +35,7 @@
                 </div>
 
                 <div class="form-group">
-                    <label>Телефон нөміріңіз:</label>
+                    <label>Телефон нөміріңіз (SMS үшін):</label>
                     <input type="tel" id="authPhone" placeholder="+7 707 123 4567" required>
                 </div>
 
@@ -51,16 +44,16 @@
                     <input type="password" id="mentorPassword" placeholder="Құпия сөзді енгізіңіз">
                 </div>
 
-                <button type="submit" id="sendCodeBtn" class="duo-btn duo-btn-green w-100">Почтаға код жіберу 📩</button>
+                <button type="submit" id="sendSmsBtn" class="duo-btn duo-btn-green w-100">SMS Код алу 📲</button>
             </form>
         </div>
     </div>
 
-    <!-- 2. ПОЧТАҒА КЕЛГЕН КОДТЫ ТЕКСЕРУ ЭКРАНЫ (ЖАҢА ОКНО) -->
+    <!-- 2. СМС КОДТЫ ТЕКСЕРУ ЭКРАНЫ (ЖАҢА ОКНО) -->
     <div id="verifyContainer" class="auth-wrapper" style="display: none;">
         <div class="auth-card duo-card" style="text-align: center;">
-            <h2>📩 Кодты растау</h2>
-            <p class="subtitle"><strong id="userEmailDisplay"></strong> почтаңызға 4 таңбалы растау коды жіберілді. Сонда келген кодты жазыңыз:</p>
+            <h2>📲 SMS Кодты растау</h2>
+            <p class="subtitle"><strong id="userPhoneDisplay"></strong> нөміріңізге 4 таңбалы растау коды жіберілді. Сонда келген кодты жазыңыз:</p>
 
             <form id="verifyForm" onsubmit="handleVerifySubmit(event)">
                 <div class="form-group">
@@ -80,7 +73,7 @@
                 <h2>S7 <span>ROBOTICS</span></h2>
             </div>
             <div class="duo-stats">
-                <div class="stat-item">🔥 <span id="streakCount">1</span></div>
+                <div class="stat-item">🔥 <span id="streakCount">1</span> күн</div>
                 <div class="stat-item">⚡ <span id="xpCount">0</span> XP</div>
                 <div class="stat-item">👤 <span id="studentNameDisplay">Оқушы</span></div>
                 <button class="logout-btn" onclick="logout()">Шығу 🚪</button>
@@ -140,7 +133,7 @@
         </div>
     </div>
 
-    <!-- САБАҚ ТЕРЕЗЕСІ ЖӘНЕ КОД ТЕКСЕРУ (COMPILER) -->
+    <!-- САБАҚ ЖӘНЕ КОДТЫ ТЕКСЕРУ (COMPILER MODAL) -->
     <div id="lessonModal" class="modal">
         <div class="modal-content duo-card" style="max-width: 650px;">
             <span class="close-btn" onclick="closeLessonModal()">&times;</span>
