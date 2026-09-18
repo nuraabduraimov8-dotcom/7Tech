@@ -1,259 +1,233 @@
-* ⁠* {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-    font-family: 'Nunito', sans-serif;
+// Arduino IDE Негізіндегі Сабақтар Бинлігі
+const lessonsData = [
+    {
+        id: 1,
+        title: "1. LED Blink (Жыпылықтау)",
+        desc: "Arduino-дағы ең алғашқы сабақ: 13-ші пиндегі диодты жыпылықтату.",
+        icon: "💡",
+        status: "completed",
+        code: `void setup() {\n  pinMode(13, OUTPUT);\n}\n\nvoid loop() {\n  digitalWrite(13, HIGH);\n  delay(1000);\n  digitalWrite(13, LOW);\n  delay(1000);\n}`
+    },
+    {
+        id: 2,
+        title: "2. Button Control (Батырма)",
+        desc: "Батырманы басу арқылы жарық диодты қосу мен өшіру.",
+        icon: "🔘",
+        status: "active",
+        code: `int buttonPin = 2;\nint ledPin = 13;\n\nvoid setup() {\n  pinMode(ledPin, OUTPUT);\n  pinMode(buttonPin, INPUT);\n}\n\nvoid loop() {\n  int state = digitalRead(buttonPin);\n  if (state == HIGH) {\n    digitalWrite(ledPin, HIGH);\n  } else {\n    digitalWrite(ledPin, LOW);\n  }\n}`
+    },
+    {
+        id: 3,
+        title: "3. Potentiometer (Аналогты сигнал)",
+        desc: "Потенциометр арқылы LED жарықтығын реттеу.",
+        icon: "🎛️",
+        status: "locked",
+        code: `int potPin = A0;\nint ledPin = 9;\n\nvoid setup() {\n  pinMode(ledPin, OUTPUT);\n}\n\nvoid loop() {\n  int val = analogRead(potPin);\n  int bright = map(val, 0, 1023, 0, 255);\n  analogWrite(ledPin, bright);\n}`
+    },
+    {
+        id: 4,
+        title: "4. Buzzer Melody (Дыбыс шығару)",
+        desc: "Пьезодинамик арқылы әртүрлі жиіліктегі дыбыс пен әуен шығару.",
+        icon: "🔊",
+        status: "locked",
+        code: `int buzzer = 8;\n\nvoid setup() {\n  pinMode(buzzer, OUTPUT);\n}\n\nvoid loop() {\n  tone(buzzer, 1000); // 1000Hz\n  delay(500);\n  noTone(buzzer);\n  delay(500);\n}`
+    },
+    {
+        id: 5,
+        title: "5. Ultrasonic Sensor (HC-SR04)",
+        desc: "Ультрадыбыстық сенсор көмегімен арақашықтықты см-мен өлшеу.",
+        icon: "📡",
+        status: "locked",
+        code: `int trig = 9, echo = 10;\nvoid setup() {\n  Serial.begin(9600);\n  pinMode(trig, OUTPUT);\n  pinMode(echo, INPUT);\n}\nvoid loop() {\n  digitalWrite(trig, LOW);\n  delayMicroseconds(2);\n  digitalWrite(trig, HIGH);\n  delayMicroseconds(10);\n  digitalWrite(trig, LOW);\n  long duration = pulseIn(echo, HIGH);\n  int cm = duration * 0.034 / 2;\n  Serial.println(cm);\n  delay(200);\n}`
+    },
+    {
+        id: 6,
+        title: "6. Servo Motor (SG90)",
+        desc: "Сервомоторды 0-ден 180 градусқа дейін бұру.",
+        icon: "⚙️",
+        status: "locked",
+        code: `#include <Servo.h>\nServo myServo;\n\nvoid setup() {\n  myServo.attach(9);\n}\n\nvoid loop() {\n  myServo.write(0);\n  delay(1000);\n  myServo.write(180);\n  delay(1000);\n}`
+    }
+];
+
+let appState = {
+    xp: 120,
+    currentLesson: null,
+    submissions: [
+        { id: 1, student: "Асан Мұратов", lesson: "1. LED Blink", media: "https://tinkercad.com/demo1", status: "Қабылданды" }
+    ]
+};
+
+// Парақша жүктелгенде сабақтарды шығару
+window.onload = function() {
+    renderLessons();
+};
+
+function renderLessons() {
+    const container = document.getElementById("lessonsContainer");
+    container.innerHTML = "";
+
+    lessonsData.forEach((lesson, index) => {
+        const node = document.createElement("div");
+        node.className = "map-node";
+
+        let btnClass = "duo-btn-gray";
+        let onclickAttr = "";
+
+        if (lesson.status === "completed") {
+            btnClass = "duo-btn-green";
+            onclickAttr = `openLessonModal(${lesson.id})`;
+        } else if (lesson.status === "active") {
+            btnClass = "duo-btn-primary";
+            onclickAttr = `openLessonModal(${lesson.id})`;
+        }
+
+        node.innerHTML = `
+            <button class="node-btn ${btnClass}" onclick="${onclickAttr}">
+                ${lesson.status === 'completed' ? '✓' : lesson.icon}
+            </button>
+            <span class="node-label">${lesson.title}</span>
+        `;
+
+        container.appendChild(node);
+
+        if (index < lessonsData.length - 1) {
+            const connector = document.createElement("div");
+            connector.className = `map-connector ${lesson.status === 'completed' ? 'active' : ''}`;
+            container.appendChild(connector);
+        }
+    });
 }
 
-body {
-    background-color: #f7f7f7;
-    color: #4b4b4b;
+// Ментор және Студент режимдерін ауыстыру (XP Түзетілген)
+function switchRole() {
+    const role = document.getElementById("roleSelect").value;
+    const studentView = document.getElementById("studentView");
+    const mentorView = document.getElementById("mentorView");
+    const studentStats = document.getElementById("studentStats");
+
+    if (role === "student") {
+        studentView.classList.add("active");
+        mentorView.classList.remove("active");
+        studentStats.style.display = "flex"; // Студентте көрсету
+    } else {
+        studentView.classList.remove("active");
+        mentorView.classList.add("active");
+        studentStats.style.display = "none"; // Менторда ХИДДЕН (Жасыру)
+        renderMentorTable();
+    }
 }
 
-:root {
-    --duo-green: #58cc02;
-    --duo-green-shadow: #46a302;
-    --duo-blue: #1cb0f6;
-    --duo-blue-shadow: #1899d6;
-    --duo-gray: #e5e5e5;
-    --duo-gray-shadow: #cecece;
-    --duo-orange: #ff9600;
+// Modal Басқару
+function openLessonModal(id) {
+    const lesson = lessonsData.find(l => l.id === id);
+    if (!lesson) return;
+
+    appState.currentLesson = lesson;
+    document.getElementById("modalTitle").innerText = lesson.title;
+    document.getElementById("modalDesc").innerText = lesson.desc;
+    document.getElementById("modalCode").innerText = lesson.code;
+    document.getElementById("lessonModal").style.display = "flex";
 }
 
-.navbar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background: white;
-    border-bottom: 2px solid var(--duo-gray);
-    padding: 0.8rem 2rem;
+function closeLessonModal() {
+    document.getElementById("lessonModal").style.display = "none";
 }
 
-.logo h2 {
-    font-weight: 900;
-    color: var(--duo-green);
+function submitProject(event) {
+    event.preventDefault();
+    const media = document.getElementById("projectMedia").value;
+
+    appState.submissions.push({
+        id: Date.now(),
+        student: "Асан Мұратов",
+        lesson: appState.currentLesson.title,
+        media: media,
+        status: "Күтілуде"
+    });
+
+    alert("🎉 Жоба тексеруге менторға жіберілді!");
+    closeLessonModal();
+    document.getElementById("submissionForm").reset();
 }
 
-.logo span { color: var(--duo-blue); }
+function renderMentorTable() {
+    const tbody = document.getElementById("mentorTableBody");
+    tbody.innerHTML = "";
 
-.duo-stats {
-    display: flex;
-    gap: 1.5rem;
-    font-weight: 800;
-    font-size: 18px;
+    appState.submissions.forEach((item) => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+            <td><strong>${item.student}</strong></td>
+            <td>${item.lesson}</td>
+            <td><a href="${item.media}" target="_blank">Сілтемені ашу</a></td>
+            <td><span style="color: ${item.status === 'Қабылданды' ? '#58cc02' : '#ff9600'}; font-weight:800;">${item.status}</span></td>
+            <td>
+                ${item.status === 'Күтілуде' 
+                    ? `<button class="duo-btn duo-btn-green" style="padding:6px 12px; font-size:12px;" onclick="approveSubmission(${item.id})">Қабылдау (+50 XP)</button>` 
+                    : '✅ Тексерілді'}
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
 }
 
-.role-selector select {
-    padding: 8px 12px;
-    border-radius: 12px;
-    border: 2px solid var(--duo-gray);
-    font-weight: 700;
-    cursor: pointer;
+function approveSubmission(id) {
+    const sub = appState.submissions.find(s => s.id === id);
+    if (sub) {
+        sub.status = "Қабылданды";
+        appState.xp += 50;
+        document.getElementById("xpCount").innerText = appState.xp;
+        renderMentorTable();
+        alert("👏 Жоба қабылданды! Студентке +50 XP қосылды.");
+    }
 }
 
-.container {
-    max-width: 1000px;
-    margin: 2rem auto;
-    padding: 0 1rem;
+// --- AI CHATBOT LOGIC ---
+function toggleAIChat() {
+    const chatWin = document.getElementById("aiChatWindow");
+    chatWin.style.display = chatWin.style.display === "flex" ? "none" : "flex";
 }
 
-.view-section { display: none; }
-.view-section.active { display: block; }
-
-.duo-layout {
-    display: grid;
-    grid-template-columns: 1fr 320px;
-    gap: 2rem;
+function handleAIPress(e) {
+    if (e.key === "Enter") sendAIMessage();
 }
 
-.duo-card {
-    background: white;
-    border: 2px solid var(--duo-gray);
-    border-radius: 16px;
-    padding: 1.5rem;
-    margin-bottom: 1.5rem;
+function sendAIMessage() {
+    const input = document.getElementById("aiInput");
+    const text = input.value.trim();
+    if (!text) return;
+
+    const chatBody = document.getElementById("aiChatBody");
+
+    // User Message
+    const userMsg = document.createElement("div");
+    userMsg.className = "chat-msg user-msg";
+    userMsg.innerText = text;
+    chatBody.appendChild(userMsg);
+
+    input.value = "";
+
+    // AI Response Simulation
+    setTimeout(() => {
+        const aiMsg = document.createElement("div");
+        aiMsg.className = "chat-msg ai-msg";
+        aiMsg.innerText = getAIResponse(text);
+        chatBody.appendChild(aiMsg);
+        chatBody.scrollTop = chatBody.scrollHeight;
+    }, 600);
 }
 
-/* Lesson Map */
-.lesson-map {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+// Карапайым ИИ логикасы
+function getAIResponse(query) {
+    query = query.toLowerCase();
+    if (query.includes("blink") || query.includes("диод")) {
+        return "💡 'Blink' сабағында digitalWrite(13, HIGH) светодиодты жағады, ал delay(1000) 1 секунд күтеді!";
+    } else if (query.includes("servo") || query.includes("серво")) {
+        return "⚙️ Сервомоторды басқару үшін <Servo.h> кітапханасын қосып, write(90) арқылы градус бер!";
+    } else if (query.includes("ultrasonic") || query.includes("сенсор")) {
+        return "📡 HC-SR04 датчигі ультрадыбыс толқынын жіберіп, кедергіге дейінгі қашықтықты уақытпен есептейді.";
+    } else {
+        return "🤖 Тамаша сұрақ! Arduino IDE-де кодты тексеру үшін 'Verify' (✓) батырмасын басып, платаға жүктеу үшін 'Upload' (➔) батырмасын қолдан.";
+    }
 }
-
-.section-title {
-    font-weight: 800;
-    margin-bottom: 2rem;
-}
-
-.map-node {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
-
-.node-btn {
-    width: 75px;
-    height: 75px;
-    border-radius: 50%;
-    border: none;
-    font-size: 28px;
-    color: white;
-    cursor: pointer;
-    transition: transform 0.1s;
-}
-
-.node-btn:active {
-    transform: translateY(4px);
-    box-shadow: none !important;
-}
-
-.duo-btn-green { background: var(--duo-green); box-shadow: 0 6px 0 var(--duo-green-shadow); }
-.duo-btn-primary { background: var(--duo-blue); box-shadow: 0 6px 0 var(--duo-blue-shadow); }
-.duo-btn-gray { background: var(--duo-gray); box-shadow: 0 6px 0 var(--duo-gray-shadow); color: #a5a5a5; }
-
-.map-connector {
-    width: 8px;
-    height: 35px;
-    background: var(--duo-gray);
-    margin: 6px 0;
-    border-radius: 4px;
-}
-
-.map-connector.active { background: var(--duo-green); }
-
-.node-label {
-    font-weight: 800;
-    margin-top: 6px;
-    font-size: 13px;
-    text-align: center;
-}
-
-/* AI Chat Widget */
-.ai-chat-widget {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    z-index: 1000;
-}
-
-.ai-toggle-btn {
-    background: var(--duo-blue);
-    color: white;
-    border: none;
-    padding: 12px 20px;
-    border-radius: 25px;
-    font-weight: 800;
-    box-shadow: 0 4px 0 var(--duo-blue-shadow);
-    cursor: pointer;
-}
-
-.ai-chat-window {
-    display: none;
-    flex-direction: column;
-    width: 320px;
-    height: 400px;
-    background: white;
-    border: 2px solid var(--duo-gray);
-    border-radius: 16px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-    position: absolute;
-    bottom: 60px;
-    right: 0;
-    overflow: hidden;
-}
-
-.ai-chat-header {
-    background: var(--duo-blue);
-    color: white;
-    padding: 12px;
-    font-weight: 800;
-    display: flex;
-    justify-content: space-between;
-}
-
-.close-chat { cursor: pointer; }
-
-.ai-chat-body {
-    flex: 1;
-    padding: 10px;
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-.chat-msg {
-    padding: 8px 12px;
-    border-radius: 12px;
-    font-size: 13px;
-    max-width: 80%;
-}
-
-.ai-msg { background: #e0f2fe; color: #0369a1; align-self: flex-start; }
-.user-msg { background: var(--duo-green); color: white; align-self: flex-end; }
-
-.ai-chat-footer {
-    display: flex;
-    padding: 8px;
-    border-top: 1px solid var(--duo-gray);
-}
-
-.ai-chat-footer input {
-    flex: 1;
-    padding: 6px 10px;
-    border: 1px solid var(--duo-gray);
-    border-radius: 8px;
-    outline: none;
-}
-
-.ai-chat-footer button {
-    background: var(--duo-green);
-    color: white;
-    border: none;
-    padding: 6px 12px;
-    margin-left: 5px;
-    border-radius: 8px;
-    font-weight: 800;
-    cursor: pointer;
-}
-
-/* Modal */
-.modal {
-    display: none;
-    position: fixed;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0,0,0,0.5);
-    justify-content: center;
-    align-items: center;
-    z-index: 2000;
-}
-
-.modal-content { width: 90%; max-width: 550px; position: relative; }
-.close-btn { position: absolute; top: 15px; right: 20px; font-size: 28px; font-weight: 800; cursor: pointer; }
-
-.code-box {
-    background: #1e293b;
-    color: #38bdf8;
-    padding: 1rem;
-    border-radius: 12px;
-    margin: 1rem 0;
-    max-height: 200px;
-    overflow-y: auto;
-}
-
-.form-group { margin-bottom: 1rem; }
-.form-group label { display: block; font-weight: 700; margin-bottom: 5px; }
-.form-group input, .form-group textarea {
-    width: 100%; padding: 10px; border: 2px solid var(--duo-gray); border-radius: 10px;
-}
-
-.duo-btn { border: none; padding: 12px 20px; border-radius: 12px; font-weight: 800; color: white; cursor: pointer; }
-.w-100 { width: 100%; }
-
-.progress-bar-container { width: 100%; height: 14px; background: var(--duo-gray); border-radius: 10px; margin: 8px 0; overflow: hidden; }
-.progress-bar { height: 100%; background: var(--duo-green); }
-.bg-orange { background: var(--duo-orange); }
-
-.duo-table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
-.duo-table th, .duo-table td { padding: 12px; border-bottom: 2px solid var(--duo-gray); text-align: left; }
