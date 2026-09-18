@@ -9,16 +9,37 @@
 </head>
 <body>
 
-    <!-- 1. АВТОРИЗАЦИЯ ЖӘНЕ НӨМІР ЕНГІЗУ ЭКРАНЫ -->
+    <!-- АВТОРИЗАЦИЯ ЖӘНЕ ТІРКЕЛУ ЭКРАНЫ -->
     <div id="authContainer" class="auth-wrapper">
         <div class="auth-card duo-card">
             <h2>S7 <span>ROBOTICS</span></h2>
-            <p class="subtitle">Платформаға кіру үшін нөміріңізді енгізіңіз</p>
+            
+            <!-- Табтар: Кіру / Тіркелу -->
+            <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                <button type="button" id="loginTabBtn" class="duo-btn duo-btn-primary" style="flex: 1;" onclick="switchAuthMode('login')">Кіру</button>
+                <button type="button" id="regTabBtn" class="duo-btn duo-btn-gray" style="flex: 1;" onclick="switchAuthMode('register')">Тіркелу</button>
+            </div>
 
-            <form id="authForm" onsubmit="handleSendSms(event)">
+            <!-- 1. КІРУ ФОРМАСЫ (LOGIN) -->
+            <form id="loginForm" onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label>Email немесе Телефон:</label>
+                    <input type="text" id="loginIdentifier" placeholder="example@mail.com немесе +77071234567" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Құпия сөз (Пароль):</label>
+                    <input type="password" id="loginPassword" placeholder="Құпия сөзіңізді енгізіңіз" required>
+                </div>
+
+                <button type="submit" class="duo-btn duo-btn-green w-100">Платформаға кіру 🚀</button>
+            </form>
+
+            <!-- 2. ТІРКЕЛУ ФОРМАСЫ (REGISTER) -->
+            <form id="regForm" onsubmit="handleRegister(event)" style="display: none;">
                 <div class="form-group">
                     <label>Рөлді таңдаңыз:</label>
-                    <select id="authRole" onchange="toggleMentorPasswordInput()" required>
+                    <select id="regRole" onchange="toggleMentorPasswordInput()" required>
                         <option value="student">👨‍🎓 Студент</option>
                         <option value="mentor">👨‍🏫 Ментор</option>
                     </select>
@@ -26,47 +47,35 @@
 
                 <div class="form-group">
                     <label>Аты-жөніңіз:</label>
-                    <input type="text" id="authName" placeholder="Арман Қасымов" required>
+                    <input type="text" id="regName" placeholder="Арман Қасымов" required>
                 </div>
 
                 <div class="form-group">
                     <label>Email почтаңыз:</label>
-                    <input type="email" id="authEmail" placeholder="example@mail.com" required>
+                    <input type="email" id="regEmail" placeholder="example@mail.com" required>
                 </div>
 
                 <div class="form-group">
-                    <label>Телефон нөміріңіз (SMS үшін):</label>
-                    <input type="tel" id="authPhone" placeholder="+7 707 123 4567" required>
+                    <label>Телефон нөміріңіз:</label>
+                    <input type="tel" id="regPhone" placeholder="+7 707 123 4567" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Құпия сөз ойлап табыңыз:</label>
+                    <input type="password" id="regPassword" placeholder="Кемінде 4 таңба" required>
                 </div>
 
                 <div class="form-group" id="mentorPasswordGroup" style="display: none;">
-                    <label>🔒 Ментор құпия сөзі:</label>
-                    <input type="password" id="mentorPassword" placeholder="Құпия сөзді енгізіңіз">
+                    <label>🔒 Ментордың арнайы коды:</label>
+                    <input type="password" id="mentorSecret" placeholder="Арнайы кодты енгізіңіз">
                 </div>
 
-                <button type="submit" id="sendSmsBtn" class="duo-btn duo-btn-green w-100">SMS Код алу 📲</button>
+                <button type="submit" class="duo-btn duo-btn-green w-100">Аккаунт ашу ✨</button>
             </form>
         </div>
     </div>
 
-    <!-- 2. СМС КОДТЫ ТЕКСЕРУ ЭКРАНЫ (ЖАҢА ОКНО) -->
-    <div id="verifyContainer" class="auth-wrapper" style="display: none;">
-        <div class="auth-card duo-card" style="text-align: center;">
-            <h2>📲 SMS Кодты растау</h2>
-            <p class="subtitle"><strong id="userPhoneDisplay"></strong> нөміріңізге 4 таңбалы растау коды жіберілді. Сонда келген кодты жазыңыз:</p>
-
-            <form id="verifyForm" onsubmit="handleVerifySubmit(event)">
-                <div class="form-group">
-                    <input type="text" id="verifyCode" maxlength="4" placeholder="X X X X" required style="text-align: center; font-size: 28px; letter-spacing: 8px; font-weight: bold;">
-                </div>
-                <button type="submit" class="duo-btn duo-btn-primary w-100">Кодты тексеру және Кіру 🚀</button>
-            </form>
-
-            <button class="duo-btn duo-btn-gray w-100" style="margin-top: 10px;" onclick="backToAuth()">Қайта оралу ↩️</button>
-        </div>
-    </div>
-
-    <!-- 3. СТУДЕНТ КАБИНЕТІ -->
+    <!-- СТУДЕНТ КАБИНЕТІ -->
     <div id="studentApp" style="display: none;">
         <header class="navbar">
             <div class="logo">
@@ -100,7 +109,7 @@
         </div>
     </div>
 
-    <!-- 4. МЕНТОР КАБИНЕТІ -->
+    <!-- МЕНТОР КАБИНЕТІ -->
     <div id="mentorApp" style="display: none;">
         <header class="navbar navbar-mentor">
             <div class="logo">
@@ -133,7 +142,7 @@
         </div>
     </div>
 
-    <!-- САБАҚ ЖӘНЕ КОДТЫ ТЕКСЕРУ (COMPILER MODAL) -->
+    <!-- САБАҚ ЖӘНЕ КОДТЫ ТЕКСЕРУ MODAL -->
     <div id="lessonModal" class="modal">
         <div class="modal-content duo-card" style="max-width: 650px;">
             <span class="close-btn" onclick="closeLessonModal()">&times;</span>
