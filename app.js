@@ -6,7 +6,7 @@ const defaultLessons = [
     { id: 3, title: "3. Potentiometer", desc: "Аналогты сигналмен жарықтық реттеу.", icon: "🎛️", status: "locked", code: "void setup() { pinMode(9, OUTPUT); }\nvoid loop() { analogWrite(9, analogRead(A0)/4); }" }
 ];
 
-let appState = JSON.parse(localStorage.getItem("s7_lms_db_v4")) || {
+let appState = JSON.parse(localStorage.getItem("s7_lms_db_v5")) || {
     currentUser: null,
     generatedCode: null,
     tempUser: null,
@@ -18,7 +18,7 @@ let appState = JSON.parse(localStorage.getItem("s7_lms_db_v4")) || {
 };
 
 function saveData() {
-    localStorage.setItem("s7_lms_db_v4", JSON.stringify(appState));
+    localStorage.setItem("s7_lms_db_v5", JSON.stringify(appState));
 }
 
 window.onload = function() {
@@ -35,7 +35,7 @@ function checkSession() {
     if (!user) {
         document.getElementById("authContainer").style.display = "flex";
     } else if (user.role === "student") {
-        updateStreak(); // Стрикті тексеру және жаңарту
+        updateStreak(); // Стрикті есептеу және сақтау
         document.getElementById("studentApp").style.display = "block";
         document.getElementById("studentNameDisplay").innerText = user.name;
         document.getElementById("xpCount").innerText = appState.xp;
@@ -52,13 +52,13 @@ function toggleMentorPasswordInput() {
     document.getElementById("mentorPasswordGroup").style.display = (role === "mentor") ? "block" : "none";
 }
 
-// 1. ПОЧТАҒА КОД ЖІБЕРУ ЖӘНЕ ТЕКСЕРУ ТЕРЕЗЕСІНЕ ӨТУ
-function handleSendCode(e) {
+// 1. НӨМІРГЕ СМС КОД ЖІБЕРУ
+function handleSendSms(e) {
     e.preventDefault();
     const role = document.getElementById("authRole").value;
     const name = document.getElementById("authName").value;
     const email = document.getElementById("authEmail").value;
-    const phone = document.getElementById("authPhone").value;
+    const phone = document.getElementById("authPhone").value.trim();
     const password = document.getElementById("mentorPassword").value;
 
     if (role === "mentor" && password !== MENTOR_SECRET_PASSWORD) {
@@ -66,42 +66,26 @@ function handleSendCode(e) {
         return;
     }
 
-    // 4 таңбалы код генерациясы
+    if (phone.length < 10) {
+        alert("❌ Телефон нөмірін толық енгізіңіз!");
+        return;
+    }
+
+    // 4 таңбалы SMS код құрастыру
     const randomCode = Math.floor(1000 + Math.random() * 9000).toString();
     appState.generatedCode = randomCode;
     appState.tempUser = { role, name, email, phone };
 
-    const btn = document.getElementById("sendCodeBtn");
-    btn.innerText = "Код жіберілуде... ⏳";
-    btn.disabled = true;
-
-    // EmailJS арқылы почтаға хат жіберу
-    const templateParams = {
-        to_email: email,
-        to_name: name,
-        passcode: randomCode
-    };
-
-    // Бұл жерге EmailJS SERVICE_ID және TEMPLATE_ID қойылады
-    emailjs.send('YOUR_SERVICE_ID', 'YOUR_TEMPLATE_ID', templateParams)
-        .then(function() {
-            alert("✅ Код почтаңызға жіберілді!");
-            showVerifyWindow();
-        }, function(error) {
-            // Тест режимінде EmailJS бапталмаса да, кодты консольге немесе alert-ке шығару
-            console.log("Email error:", error);
-            alert("ℹ️ Тест режимі: Почтаға жіберілген код: " + randomCode);
-            showVerifyWindow();
-        }).finally(() => {
-            btn.innerText = "Почтаға код жіберу 📩";
-            btn.disabled = false;
-        });
+    // ТЕСТ РЕЖИМІ: Экранға шығару (Нақты SMS Twilio арқылы арнайы серверен кетеді)
+    alert(`📲 [SMS ЖІБЕРІЛДІ] ${phone} нөміріне келген растау коды: ${randomCode}`);
+    
+    showVerifyWindow();
 }
 
 function showVerifyWindow() {
     document.getElementById("authContainer").style.display = "none";
     document.getElementById("verifyContainer").style.display = "flex";
-    document.getElementById("userEmailDisplay").innerText = appState.tempUser.email;
+    document.getElementById("userPhoneDisplay").innerText = appState.tempUser.phone;
 }
 
 function backToAuth() {
@@ -109,7 +93,7 @@ function backToAuth() {
     document.getElementById("authContainer").style.display = "flex";
 }
 
-// 2. ЕНГІЗІЛГЕН КОДТЫ ТЕКСЕРУ
+// 2. ЕНГІЗІЛГЕН СМС КОДТЫ ТЕКСЕРУ
 function handleVerifySubmit(e) {
     e.preventDefault();
     const inputCode = document.getElementById("verifyCode").value.trim();
@@ -121,11 +105,11 @@ function handleVerifySubmit(e) {
         saveData();
         checkSession();
     } else {
-        alert("❌ Код қате! Почтаңызды қайта тексеріп, дұрыс енгізіңіз.");
+        alert("❌ Код қате! Қайтадан тексеріп енгізіңіз.");
     }
 }
 
-// 3. СТРИК (STREAK) ЛОГИКАСЫ
+// 3. СТРИК (STREAK) АВТОМАТТЫ ЕСЕПТЕУ
 function updateStreak() {
     const today = new Date().toDateString();
     const lastLogin = appState.lastLoginDate;
@@ -138,7 +122,7 @@ function updateStreak() {
         const diffDays = Math.round((currentDate - lastDate) / (1000 * 60 * 60 * 24));
 
         if (diffDays === 1) {
-            appState.streak += 1; // Кеше кірген болса +1
+            appState.streak += 1; // Кеше кірген болса +1 күн
         } else if (diffDays > 1) {
             appState.streak = 1;  // Күн өткізіп алса, қайтадан 1 болады
         }
@@ -155,7 +139,7 @@ function logout() {
     location.reload();
 }
 
-// САБАҚТАР ЖӘНЕ КОДТЫ ТЕКСЕРУ (COMPILER)
+// САБАҚТАРДЫ КӨРСЕТУ ЖӘНЕ КОДТЫ ТЕКСЕРУ (COMPILER)
 function renderLessons() {
     const container = document.getElementById("lessonsContainer");
     if (!container) return;
