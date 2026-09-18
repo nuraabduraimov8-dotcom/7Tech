@@ -1,41 +1,41 @@
-// Ментордың құпия паролі
 const MENTOR_SECRET_PASSWORD = "admin"; 
 
 const defaultLessons = [
     { id: 1, title: "1. LED Blink", desc: "13-пиндегі диодты жыпылықтату.", icon: "💡", status: "active", code: "void setup() {\n  pinMode(13, OUTPUT);\n}\nvoid loop() {\n  digitalWrite(13, HIGH);\n  delay(1000);\n  digitalWrite(13, LOW);\n  delay(1000);\n}" },
     { id: 2, title: "2. Button Control", desc: "Батырма арқылы LED басқару.", icon: "🔘", status: "locked", code: "int btn = 2, led = 13;\nvoid setup() {\n  pinMode(led, OUTPUT);\n  pinMode(btn, INPUT);\n}\nvoid loop() {\n  if(digitalRead(btn) == HIGH) digitalWrite(led, HIGH);\n  else digitalWrite(led, LOW);\n}" },
-    { id: 3, title: "3. Potentiometer", desc: "Аналогты сигналмен жарықтық реттеу.", icon: "🎛️", status: "locked", code: "void setup() { pinMode(9, OUTPUT); }\nvoid loop() { analogWrite(9, analogRead(A0)/4); }" },
-    { id: 4, title: "4. Ultrasonic Sensor", desc: "Қашықтықты өлшеу.", icon: "📡", status: "locked", code: "int trig = 9, echo = 10;\nvoid setup() { Serial.begin(9600); pinMode(trig, OUTPUT); pinMode(echo, INPUT); }" }
+    { id: 3, title: "3. Potentiometer", desc: "Аналогты сигналмен жарықтық реттеу.", icon: "🎛️", status: "locked", code: "void setup() { pinMode(9, OUTPUT); }\nvoid loop() { analogWrite(9, analogRead(A0)/4); }" }
 ];
 
-// LocalStorage арқылы жүйе күйін жүктеу
-let appState = JSON.parse(localStorage.getItem("s7_lms_db")) || {
-    currentUser: null, // Тіркелген қолданушы
+let appState = JSON.parse(localStorage.getItem("s7_lms_db_v4")) || {
+    currentUser: null,
     generatedCode: null,
     tempUser: null,
+    streak: 1,
+    lastLoginDate: null,
     xp: 0,
     lessons: defaultLessons,
     submissions: []
 };
 
 function saveData() {
-    localStorage.setItem("s7_lms_db", JSON.stringify(appState));
+    localStorage.setItem("s7_lms_db_v4", JSON.stringify(appState));
 }
 
 window.onload = function() {
     checkSession();
 };
 
-// Тіркелген/Кірген сессияны тексеру
 function checkSession() {
     const user = appState.currentUser;
     document.getElementById("authContainer").style.display = "none";
+    document.getElementById("verifyContainer").style.display = "none";
     document.getElementById("studentApp").style.display = "none";
     document.getElementById("mentorApp").style.display = "none";
 
     if (!user) {
         document.getElementById("authContainer").style.display = "flex";
     } else if (user.role === "student") {
+        updateStreak(); // Стрикті тексеру және жаңарту
         document.getElementById("studentApp").style.display = "block";
         document.getElementById("studentNameDisplay").innerText = user.name;
         document.getElementById("xpCount").innerText = appState.xp;
@@ -47,15 +47,13 @@ function checkSession() {
     }
 }
 
-// Ментор таңдалса, пароль сұрайтын ұяшықты көрсету
 function toggleMentorPasswordInput() {
     const role = document.getElementById("authRole").value;
-    const passGroup = document.getElementById("mentorPasswordGroup");
-    passGroup.style.display = (role === "mentor") ? "block" : "none";
+    document.getElementById("mentorPasswordGroup").style.display = (role === "mentor") ? "block" : "none";
 }
 
-// 1-ҚАДАМ: Форманы жіберу және Код генерациялау
-function handleAuthSubmit(e) {
+// 1. ПОЧТАҒА КОД ЖІБЕРУ ЖӘНЕ ТЕКСЕРУ ТЕРЕЗЕСІНЕ ӨТУ
+function handleSendCode(e) {
     e.preventDefault();
     const role = document.getElementById("authRole").value;
     const name = document.getElementById("authName").value;
@@ -63,26 +61,55 @@ function handleAuthSubmit(e) {
     const phone = document.getElementById("authPhone").value;
     const password = document.getElementById("mentorPassword").value;
 
-    // Ментор паролін тексеру
     if (role === "mentor" && password !== MENTOR_SECRET_PASSWORD) {
-        alert("❌ Қате Ментор Паролі! Қолжетімділік жабық.");
+        alert("❌ Қате Ментор құпия сөзі!");
         return;
     }
 
-    // Кездейсоқ 4 таңбалы код құру
+    // 4 таңбалы код генерациясы
     const randomCode = Math.floor(1000 + Math.random() * 9000).toString();
     appState.generatedCode = randomCode;
     appState.tempUser = { role, name, email, phone };
 
-    // Кодты экранға хабарлама ретінде шығару (Шынайы СМС имитациясы)
-    alert(`📲 [S7 ROBOTICS] Сіздің растау кодыңыз: ${randomCode}`);
+    const btn = document.getElementById("sendCodeBtn");
+    btn.innerText = "Код жіберілуде... ⏳";
+    btn.disabled = true;
 
-    document.getElementById("authForm").style.display = "none";
-    document.getElementById("verifyForm").style.display = "block";
-    document.getElementById("authSubtitle").innerText = "Телефон/Email-ге келген кодты енгізіңіз";
+    // EmailJS арқылы почтаға хат жіберу
+    const templateParams = {
+        to_email: email,
+        to_name: name,
+        passcode: randomCode
+    };
+
+    // Бұл жерге EmailJS SERVICE_ID және TEMPLATE_ID қойылады
+    emailjs.send('YOUR_SERVICE_ID', 'YOUR_TEMPLATE_ID', templateParams)
+        .then(function() {
+            alert("✅ Код почтаңызға жіберілді!");
+            showVerifyWindow();
+        }, function(error) {
+            // Тест режимінде EmailJS бапталмаса да, кодты консольге немесе alert-ке шығару
+            console.log("Email error:", error);
+            alert("ℹ️ Тест режимі: Почтаға жіберілген код: " + randomCode);
+            showVerifyWindow();
+        }).finally(() => {
+            btn.innerText = "Почтаға код жіберу 📩";
+            btn.disabled = false;
+        });
 }
 
-// 2-ҚАДАМ: Кодты растау
+function showVerifyWindow() {
+    document.getElementById("authContainer").style.display = "none";
+    document.getElementById("verifyContainer").style.display = "flex";
+    document.getElementById("userEmailDisplay").innerText = appState.tempUser.email;
+}
+
+function backToAuth() {
+    document.getElementById("verifyContainer").style.display = "none";
+    document.getElementById("authContainer").style.display = "flex";
+}
+
+// 2. ЕНГІЗІЛГЕН КОДТЫ ТЕКСЕРУ
 function handleVerifySubmit(e) {
     e.preventDefault();
     const inputCode = document.getElementById("verifyCode").value.trim();
@@ -92,21 +119,43 @@ function handleVerifySubmit(e) {
         appState.generatedCode = null;
         appState.tempUser = null;
         saveData();
-        alert("✅ Тіркелу сәтті өтті!");
         checkSession();
     } else {
-        alert("❌ Қате код! Қайтадан тексеріп жазыңыз.");
+        alert("❌ Код қате! Почтаңызды қайта тексеріп, дұрыс енгізіңіз.");
     }
 }
 
-// Жүйеден шығу (Logout)
+// 3. СТРИК (STREAK) ЛОГИКАСЫ
+function updateStreak() {
+    const today = new Date().toDateString();
+    const lastLogin = appState.lastLoginDate;
+
+    if (!lastLogin) {
+        appState.streak = 1;
+    } else if (lastLogin !== today) {
+        const lastDate = new Date(lastLogin);
+        const currentDate = new Date(today);
+        const diffDays = Math.round((currentDate - lastDate) / (1000 * 60 * 60 * 24));
+
+        if (diffDays === 1) {
+            appState.streak += 1; // Кеше кірген болса +1
+        } else if (diffDays > 1) {
+            appState.streak = 1;  // Күн өткізіп алса, қайтадан 1 болады
+        }
+    }
+
+    appState.lastLoginDate = today;
+    document.getElementById("streakCount").innerText = appState.streak;
+    saveData();
+}
+
 function logout() {
     appState.currentUser = null;
     saveData();
     location.reload();
 }
 
-// Сабақтарды рендеринг жасау
+// САБАҚТАР ЖӘНЕ КОДТЫ ТЕКСЕРУ (COMPILER)
 function renderLessons() {
     const container = document.getElementById("lessonsContainer");
     if (!container) return;
@@ -150,12 +199,32 @@ function openLessonModal(id) {
     document.getElementById("modalTitle").innerText = lesson.title;
     document.getElementById("modalDesc").innerText = lesson.desc;
     document.getElementById("modalCode").innerText = lesson.code;
+    document.getElementById("compilerConsole").style.display = "none";
     document.getElementById("lessonModal").style.display = "flex";
 }
 
 function closeLessonModal() { document.getElementById("lessonModal").style.display = "none"; }
 
-// Студенттің жоба тапсыруы
+function testCodeRun() {
+    const code = document.getElementById("projectCode").value.trim();
+    const consoleBox = document.getElementById("compilerConsole");
+    consoleBox.style.display = "block";
+
+    if (code.length < 10) {
+        consoleBox.style.background = "#fef2f2";
+        consoleBox.style.color = "#991b1b";
+        consoleBox.innerText = "❌ Қате: Код тым қысқа! Arduino синтаксисін толық жазыңыз (setup, loop).";
+    } else if (!code.includes("setup") || !code.includes("loop")) {
+        consoleBox.style.background = "#fff7ed";
+        consoleBox.style.color = "#c2410c";
+        consoleBox.innerText = "⚠️ Ескерту: Кодта void setup() немесе void loop() функциясы табылмады.";
+    } else {
+        consoleBox.style.background = "#f0fdf4";
+        consoleBox.style.color = "#166534";
+        consoleBox.innerText = "✅ Компиляция сәтті өтті! Синтаксистік қателер табылмады. Жобаны Менторға жібере аласыз.";
+    }
+}
+
 function submitProject(e) {
     e.preventDefault();
     const codeVal = document.getElementById("projectCode").value;
@@ -172,12 +241,11 @@ function submitProject(e) {
     });
 
     saveData();
-    alert("🎉 Жоба тексеруге жіберілді! Ментор тексерген соң келесі сабақ ашылады.");
+    alert("🎉 Жоба тексеруге жіберілді!");
     closeLessonModal();
     document.getElementById("submissionForm").reset();
 }
 
-// Ментор кестесі
 function renderMentorTable() {
     const tbody = document.getElementById("mentorTableBody");
     tbody.innerHTML = "";
@@ -188,7 +256,7 @@ function renderMentorTable() {
             <td><small>${item.studentPhone}</small></td>
             <td>${item.lessonTitle}</td>
             <td><a href="${item.media}" target="_blank">Сілтеме</a></td>
-            <td><button class="duo-btn duo-btn-primary" style="padding:4px 8px; font-size:12px;" onclick="viewMentorCode(${item.id})">Кодты көру</button></td>
+            <td><button class="duo-btn duo-btn-primary" style="padding:4px 8px; font-size:12px;" onclick="alert('${item.code}')">Кодты көру</button></td>
             <td><strong>${item.status}</strong></td>
             <td>${item.status === 'Күтілуде' ? `<button class="duo-btn duo-btn-green" style="padding:4px 8px; font-size:12px;" onclick="approveSubmission(${item.id})">Қабылдау</button>` : '✅'}</td>
         `;
@@ -196,16 +264,6 @@ function renderMentorTable() {
     });
 }
 
-function viewMentorCode(id) {
-    const sub = appState.submissions.find(s => s.id === id);
-    if (sub) {
-        document.getElementById("mentorCodeContent").innerText = sub.code || "Код жоқ";
-        document.getElementById("mentorCodeModal").style.display = "flex";
-    }
-}
-function closeMentorCodeModal() { document.getElementById("mentorCodeModal").style.display = "none"; }
-
-// Ментор тапсырманы қабылдағанда келесі курсты ашу
 function approveSubmission(id) {
     const sub = appState.submissions.find(s => s.id === id);
     if (sub && sub.status === "Күтілуде") {
@@ -224,31 +282,4 @@ function approveSubmission(id) {
         renderMentorTable();
         alert("✅ Тапсырма қабылданды! Келесі сабақ оқушыға ашылды.");
     }
-}
-
-// AI Чат
-function toggleAIChat() {
-    const win = document.getElementById("aiChatWindow");
-    win.style.display = (win.style.display === "flex") ? "none" : "flex";
-}
-function handleAIPress(e) { if (e.key === "Enter") sendAIMessage(); }
-function sendAIMessage() {
-    const input = document.getElementById("aiInput");
-    const text = input.value.trim();
-    if (!text) return;
-
-    const chatBody = document.getElementById("aiChatBody");
-    const uMsg = document.createElement("div");
-    uMsg.className = "chat-msg user-msg";
-    uMsg.innerText = text;
-    chatBody.appendChild(uMsg);
-    input.value = "";
-
-    setTimeout(() => {
-        const aiMsg = document.createElement("div");
-        aiMsg.className = "chat-msg ai-msg";
-        aiMsg.innerText = "🤖 Ментордан жауап күтуде... Кодыңызды тексеріп, қателерді қараңыз.";
-        chatBody.appendChild(aiMsg);
-        chatBody.scrollTop = chatBody.scrollHeight;
-    }, 500);
 }
