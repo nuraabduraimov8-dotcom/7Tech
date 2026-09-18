@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     
-    <!-- Firebase Бұлтты База Біріктіру Скрипттері -->
+    <!-- Firebase Бұлтты База Скрипттері -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 </head>
@@ -82,29 +82,9 @@
 
         <div class="container">
             <div class="duo-layout">
-                <div class="lesson-map duo-card">
+                <div class="lesson-map duo-card" style="width: 100%;">
                     <h2>🤖 Arduino IDE & IoT Оқу Картасы</h2>
                     <div id="lessonsContainer" class="lessons-tree"></div>
-                </div>
-
-                <div class="sidebar">
-                    <div class="duo-card">
-                        <h3>👨‍🏫 Менторға байланысу</h3>
-                        <div id="mentorStatusBox" style="margin-top: 10px;">
-                            <form onsubmit="sendMentorRequest(event)">
-                                <div class="form-group">
-                                    <label>Ментордың Email-ын жазыңыз:</label>
-                                    <input type="email" id="targetMentorEmail" placeholder="mentor@mail.com" required>
-                                </div>
-                                <button type="submit" class="duo-btn duo-btn-primary w-100">Запрос жіберу 📩</button>
-                            </form>
-                        </div>
-                    </div>
-
-                    <div class="duo-card">
-                        <h3>🏆 Лига Рейтингі</h3>
-                        <p>Мәртебеңіз: <strong>Белсенді оқушы</strong></p>
-                    </div>
                 </div>
             </div>
         </div>
@@ -124,12 +104,7 @@
 
         <div class="container">
             <div class="duo-card">
-                <h3>📩 Студенттерден түскен запростар</h3>
-                <div id="mentorRequestsList" style="margin-top: 10px;"></div>
-            </div>
-
-            <div class="duo-card">
-                <h3>📋 Тексеруге түскен тапсырмалар</h3>
+                <h3>📋 Тексеруге түскен барлық тапсырмалар</h3>
                 <table class="duo-table">
                     <thead>
                         <tr>
@@ -170,7 +145,7 @@
                     <input type="url" id="projectMedia" required placeholder="https://wokwi.com/projects/...">
                 </div>
 
-                <button type="submit" class="duo-btn duo-btn-green w-100">Менторға жіберу (+50 XP) 🚀</button>
+                <button type="submit" class="duo-btn duo-btn-green w-100">Менторларға жіберу (+50 XP) 🚀</button>
             </form>
 
             <div id="alreadySubmittedMsg" style="display: none; padding: 15px; background: #0f172a; border-radius: 10px; border: 1px solid #22c55e; margin-top: 15px; text-align: center;">
