@@ -19,22 +19,20 @@
                 <button type="button" id="regTabBtn" class="duo-btn duo-btn-gray" style="flex: 1;" onclick="switchAuthMode('register')">Тіркелу</button>
             </div>
 
-            <!-- 1. КІРУ -->
+            <!-- КІРУ -->
             <form id="loginForm" onsubmit="handleLogin(event)">
                 <div class="form-group">
                     <label>Email немесе Телефон:</label>
                     <input type="text" id="loginIdentifier" placeholder="example@mail.com" required>
                 </div>
-
                 <div class="form-group">
                     <label>Құпия сөз (Пароль):</label>
                     <input type="password" id="loginPassword" placeholder="Пароліңізді енгізіңіз" required>
                 </div>
-
                 <button type="submit" class="duo-btn duo-btn-green w-100">Войти 🚀</button>
             </form>
 
-            <!-- 2. ТІРКЕЛУ -->
+            <!-- ТІРКЕЛУ -->
             <form id="regForm" onsubmit="handleRegister(event)" style="display: none;">
                 <div class="form-group">
                     <label>Рөлді таңдаңыз:</label>
@@ -43,27 +41,22 @@
                         <option value="mentor">👨‍🏫 Ментор</option>
                     </select>
                 </div>
-
                 <div class="form-group">
                     <label>Аты-жөніңіз:</label>
                     <input type="text" id="regName" placeholder="Арман Қасымов" required>
                 </div>
-
                 <div class="form-group">
                     <label>Email почтаңыз:</label>
                     <input type="email" id="regEmail" placeholder="example@mail.com" required>
                 </div>
-
                 <div class="form-group">
                     <label>Телефон нөміріңіз:</label>
                     <input type="tel" id="regPhone" placeholder="+7 707 123 4567" required>
                 </div>
-
                 <div class="form-group">
                     <label>Өзіңіз пароль ойлап табыңыз:</label>
                     <input type="password" id="regPassword" placeholder="Кемінде 4 таңба" required>
                 </div>
-
                 <button type="submit" class="duo-btn duo-btn-green w-100">Тіркелу ✨</button>
             </form>
         </div>
@@ -91,7 +84,6 @@
                 </div>
 
                 <div class="sidebar">
-                    <!-- МЕНТОР ҚОСУ БӨЛІМІ -->
                     <div class="duo-card">
                         <h3>👨‍🏫 Менторға байланысу</h3>
                         <div id="mentorStatusBox" style="margin-top: 10px;">
@@ -127,13 +119,11 @@
         </header>
 
         <div class="container">
-            <!-- 1. СТУДЕНТТЕРДЕН ТҮСКЕН ЗАПРОСТАР -->
             <div class="duo-card">
                 <h3>📩 Студенттерден түскен запростар</h3>
                 <div id="mentorRequestsList" style="margin-top: 10px;"></div>
             </div>
 
-            <!-- 2. ЖІБЕРІЛГЕН ТАПСЫРМАЛАР ТАБЛИЦАСЫ -->
             <div class="duo-card">
                 <h3>📋 Тексеруге түскен тапсырмалар</h3>
                 <table class="duo-table">
@@ -152,7 +142,7 @@
         </div>
     </div>
 
-    <!-- САБАҚ MODAL -->
+    <!-- СТУДЕНТ САБАҚ MODAL -->
     <div id="lessonModal" class="modal" style="display: none;">
         <div class="modal-content duo-card">
             <span class="close-btn" onclick="closeLessonModal()">&times;</span>
@@ -162,6 +152,7 @@
             <label><strong>📌 Үлгі код:</strong></label>
             <div class="code-box"><pre><code id="modalCode"></code></pre></div>
 
+            <!-- ТАПСЫРМА ТАПСЫРУ ФОРМАСЫ -->
             <form id="submissionForm" onsubmit="submitProject(event)">
                 <div class="form-group">
                     <label>💻 Өз кодыңызды жазыңыз:</label>
@@ -178,6 +169,25 @@
 
                 <button type="submit" class="duo-btn duo-btn-green w-100">Менторға жіберу (+50 XP) 🚀</button>
             </form>
+
+            <!-- ЕГЕР ТАПСЫРМА ЖІБЕРІЛІП ҚОЙСА КӨРСЕТІЛЕДІ -->
+            <div id="alreadySubmittedMsg" style="display: none; padding: 15px; background: #0f172a; border-radius: 10px; border: 1px solid #22c55e; margin-top: 15px; text-align: center;">
+                <p style="color: #22c55e; font-weight: 700;">✅ Бұл тапсырма бойынша жауап жіберілген!</p>
+                <p style="color: #94a3b8; font-size: 13px; margin-top: 5px;">Қайтадан жауап жіберуге болмайды.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- МЕНТОР КОД ҚАРАУ MODAL -->
+    <div id="viewCodeModal" class="modal" style="display: none;">
+        <div class="modal-content duo-card">
+            <span class="close-btn" onclick="closeViewCodeModal()">&times;</span>
+            <h3 id="codeModalStudentName">Студент коды</h3>
+            <p id="codeModalLessonTitle" style="color: #94a3b8; margin-bottom: 10px;"></p>
+            <div class="code-box" style="max-height: 350px; overflow-y: auto;">
+                <pre><code id="codeModalContent" style="color: #38bdf8;"></code></pre>
+            </div>
+            <button class="duo-btn duo-btn-primary w-100" style="margin-top: 15px;" onclick="closeViewCodeModal()">Жабу</button>
         </div>
     </div>
 
