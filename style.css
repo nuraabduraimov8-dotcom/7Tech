@@ -1,4 +1,4 @@
-* {
+* ⁠* {
     box-sizing: border-box;
     margin: 0;
     padding: 0;
@@ -10,7 +10,6 @@ body {
     color: #4b4b4b;
 }
 
-/* Duolingo Түстері */
 :root {
     --duo-green: #58cc02;
     --duo-green-shadow: #46a302;
@@ -21,7 +20,6 @@ body {
     --duo-orange: #ff9600;
 }
 
-/* Navbar */
 .navbar {
     display: flex;
     justify-content: space-between;
@@ -34,12 +32,9 @@ body {
 .logo h2 {
     font-weight: 900;
     color: var(--duo-green);
-    letter-spacing: -1px;
 }
 
-.logo span {
-    color: var(--duo-blue);
-}
+.logo span { color: var(--duo-blue); }
 
 .duo-stats {
     display: flex;
@@ -56,7 +51,6 @@ body {
     cursor: pointer;
 }
 
-/* Container & Layout */
 .container {
     max-width: 1000px;
     margin: 2rem auto;
@@ -72,7 +66,6 @@ body {
     gap: 2rem;
 }
 
-/* Duo Cards */
 .duo-card {
     background: white;
     border: 2px solid var(--duo-gray);
@@ -81,7 +74,7 @@ body {
     margin-bottom: 1.5rem;
 }
 
-/* Map Node (Duolingo Tree) */
+/* Lesson Map */
 .lesson-map {
     display: flex;
     flex-direction: column;
@@ -100,14 +93,13 @@ body {
 }
 
 .node-btn {
-    width: 80px;
-    height: 80px;
+    width: 75px;
+    height: 75px;
     border-radius: 50%;
     border: none;
-    font-size: 32px;
+    font-size: 28px;
     color: white;
     cursor: pointer;
-    position: relative;
     transition: transform 0.1s;
 }
 
@@ -116,58 +108,115 @@ body {
     box-shadow: none !important;
 }
 
-/* 3D Button Effects */
-.duo-btn-green {
-    background: var(--duo-green);
-    box-shadow: 0 6px 0 var(--duo-green-shadow);
-}
-
-.duo-btn-primary {
-    background: var(--duo-blue);
-    box-shadow: 0 6px 0 var(--duo-blue-shadow);
-}
-
-.duo-btn-gray {
-    background: var(--duo-gray);
-    box-shadow: 0 6px 0 var(--duo-gray-shadow);
-    color: #a5a5a5;
-}
+.duo-btn-green { background: var(--duo-green); box-shadow: 0 6px 0 var(--duo-green-shadow); }
+.duo-btn-primary { background: var(--duo-blue); box-shadow: 0 6px 0 var(--duo-blue-shadow); }
+.duo-btn-gray { background: var(--duo-gray); box-shadow: 0 6px 0 var(--duo-gray-shadow); color: #a5a5a5; }
 
 .map-connector {
     width: 8px;
-    height: 40px;
+    height: 35px;
     background: var(--duo-gray);
-    margin: 8px 0;
+    margin: 6px 0;
     border-radius: 4px;
 }
 
-.map-connector.active {
-    background: var(--duo-green);
-}
+.map-connector.active { background: var(--duo-green); }
 
 .node-label {
     font-weight: 800;
-    margin-top: 8px;
-    font-size: 14px;
+    margin-top: 6px;
+    font-size: 13px;
+    text-align: center;
 }
 
-/* Progress Bars */
-.progress-bar-container {
-    width: 100%;
-    height: 16px;
-    background: var(--duo-gray);
-    border-radius: 10px;
-    margin: 10px 0 5px 0;
+/* AI Chat Widget */
+.ai-chat-widget {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 1000;
+}
+
+.ai-toggle-btn {
+    background: var(--duo-blue);
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 25px;
+    font-weight: 800;
+    box-shadow: 0 4px 0 var(--duo-blue-shadow);
+    cursor: pointer;
+}
+
+.ai-chat-window {
+    display: none;
+    flex-direction: column;
+    width: 320px;
+    height: 400px;
+    background: white;
+    border: 2px solid var(--duo-gray);
+    border-radius: 16px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    position: absolute;
+    bottom: 60px;
+    right: 0;
     overflow: hidden;
 }
 
-.progress-bar {
-    height: 100%;
-    background: var(--duo-green);
-    border-radius: 10px;
+.ai-chat-header {
+    background: var(--duo-blue);
+    color: white;
+    padding: 12px;
+    font-weight: 800;
+    display: flex;
+    justify-content: space-between;
 }
 
-.bg-orange { background: var(--duo-orange); }
+.close-chat { cursor: pointer; }
+
+.ai-chat-body {
+    flex: 1;
+    padding: 10px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.chat-msg {
+    padding: 8px 12px;
+    border-radius: 12px;
+    font-size: 13px;
+    max-width: 80%;
+}
+
+.ai-msg { background: #e0f2fe; color: #0369a1; align-self: flex-start; }
+.user-msg { background: var(--duo-green); color: white; align-self: flex-end; }
+
+.ai-chat-footer {
+    display: flex;
+    padding: 8px;
+    border-top: 1px solid var(--duo-gray);
+}
+
+.ai-chat-footer input {
+    flex: 1;
+    padding: 6px 10px;
+    border: 1px solid var(--duo-gray);
+    border-radius: 8px;
+    outline: none;
+}
+
+.ai-chat-footer button {
+    background: var(--duo-green);
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    margin-left: 5px;
+    border-radius: 8px;
+    font-weight: 800;
+    cursor: pointer;
+}
 
 /* Modal */
 .modal {
@@ -177,59 +226,34 @@ body {
     background: rgba(0,0,0,0.5);
     justify-content: center;
     align-items: center;
+    z-index: 2000;
 }
 
-.modal-content {
-    width: 90%;
-    max-width: 500px;
-    position: relative;
-}
-
-.close-btn {
-    position: absolute;
-    top: 15px; right: 20px;
-    font-size: 28px;
-    font-weight: 800;
-    cursor: pointer;
-}
+.modal-content { width: 90%; max-width: 550px; position: relative; }
+.close-btn { position: absolute; top: 15px; right: 20px; font-size: 28px; font-weight: 800; cursor: pointer; }
 
 .code-box {
-    background: #202b36;
+    background: #1e293b;
     color: #38bdf8;
     padding: 1rem;
     border-radius: 12px;
     margin: 1rem 0;
+    max-height: 200px;
+    overflow-y: auto;
 }
 
 .form-group { margin-bottom: 1rem; }
 .form-group label { display: block; font-weight: 700; margin-bottom: 5px; }
 .form-group input, .form-group textarea {
-    width: 100%;
-    padding: 10px;
-    border: 2px solid var(--duo-gray);
-    border-radius: 10px;
-    font-weight: 600;
+    width: 100%; padding: 10px; border: 2px solid var(--duo-gray); border-radius: 10px;
 }
 
-.duo-btn {
-    border: none;
-    padding: 12px 20px;
-    border-radius: 12px;
-    font-weight: 800;
-    color: white;
-    cursor: pointer;
-    font-size: 16px;
-}
+.duo-btn { border: none; padding: 12px 20px; border-radius: 12px; font-weight: 800; color: white; cursor: pointer; }
 .w-100 { width: 100%; }
 
-/* Table */
-.duo-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 1rem;
-}
-.duo-table th, .duo-table td {
-    padding: 12px;
-    border-bottom: 2px solid var(--duo-gray);
-    text-align: left;
-}
+.progress-bar-container { width: 100%; height: 14px; background: var(--duo-gray); border-radius: 10px; margin: 8px 0; overflow: hidden; }
+.progress-bar { height: 100%; background: var(--duo-green); }
+.bg-orange { background: var(--duo-orange); }
+
+.duo-table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+.duo-table th, .duo-table td { padding: 12px; border-bottom: 2px solid var(--duo-gray); text-align: left; }
