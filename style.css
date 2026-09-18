@@ -1,4 +1,4 @@
-* ⁠* {
+* {
     box-sizing: border-box;
     margin: 0;
     padding: 0;
@@ -20,6 +20,7 @@ body {
     --duo-orange: #ff9600;
 }
 
+/* Navbar */
 .navbar {
     display: flex;
     justify-content: space-between;
@@ -29,11 +30,7 @@ body {
     padding: 0.8rem 2rem;
 }
 
-.logo h2 {
-    font-weight: 900;
-    color: var(--duo-green);
-}
-
+.logo h2 { font-weight: 900; color: var(--duo-green); }
 .logo span { color: var(--duo-blue); }
 
 .duo-stats {
@@ -51,6 +48,7 @@ body {
     cursor: pointer;
 }
 
+/* Layout */
 .container {
     max-width: 1000px;
     margin: 2rem auto;
@@ -74,16 +72,20 @@ body {
     margin-bottom: 1.5rem;
 }
 
-/* Lesson Map */
+/* Lesson Map Tree */
 .lesson-map {
     display: flex;
     flex-direction: column;
     align-items: center;
 }
 
-.section-title {
-    font-weight: 800;
-    margin-bottom: 2rem;
+.section-title { font-weight: 900; margin-bottom: 1.5rem; }
+
+.lessons-tree {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
 }
 
 .map-node {
@@ -103,10 +105,7 @@ body {
     transition: transform 0.1s;
 }
 
-.node-btn:active {
-    transform: translateY(4px);
-    box-shadow: none !important;
-}
+.node-btn:active { transform: translateY(4px); box-shadow: none !important; }
 
 .duo-btn-green { background: var(--duo-green); box-shadow: 0 6px 0 var(--duo-green-shadow); }
 .duo-btn-primary { background: var(--duo-blue); box-shadow: 0 6px 0 var(--duo-blue-shadow); }
@@ -121,15 +120,9 @@ body {
 }
 
 .map-connector.active { background: var(--duo-green); }
+.node-label { font-weight: 800; margin-top: 6px; font-size: 13px; text-align: center; }
 
-.node-label {
-    font-weight: 800;
-    margin-top: 6px;
-    font-size: 13px;
-    text-align: center;
-}
-
-/* AI Chat Widget */
+/* Fixed AI Chat Widget */
 .ai-chat-widget {
     position: fixed;
     bottom: 20px;
@@ -149,16 +142,16 @@ body {
 }
 
 .ai-chat-window {
-    display: none;
+    display: none; /* Жабық күйде басталады */
     flex-direction: column;
     width: 320px;
-    height: 400px;
+    height: 380px;
     background: white;
     border: 2px solid var(--duo-gray);
     border-radius: 16px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
     position: absolute;
-    bottom: 60px;
+    bottom: 55px;
     right: 0;
     overflow: hidden;
 }
@@ -183,42 +176,15 @@ body {
     gap: 10px;
 }
 
-.chat-msg {
-    padding: 8px 12px;
-    border-radius: 12px;
-    font-size: 13px;
-    max-width: 80%;
-}
-
+.chat-msg { padding: 8px 12px; border-radius: 12px; font-size: 13px; max-width: 80%; }
 .ai-msg { background: #e0f2fe; color: #0369a1; align-self: flex-start; }
 .user-msg { background: var(--duo-green); color: white; align-self: flex-end; }
 
-.ai-chat-footer {
-    display: flex;
-    padding: 8px;
-    border-top: 1px solid var(--duo-gray);
-}
+.ai-chat-footer { display: flex; padding: 8px; border-top: 1px solid var(--duo-gray); }
+.ai-chat-footer input { flex: 1; padding: 6px 10px; border: 1px solid var(--duo-gray); border-radius: 8px; outline: none; }
+.ai-chat-footer button { background: var(--duo-green); color: white; border: none; padding: 6px 12px; margin-left: 5px; border-radius: 8px; font-weight: 800; cursor: pointer; }
 
-.ai-chat-footer input {
-    flex: 1;
-    padding: 6px 10px;
-    border: 1px solid var(--duo-gray);
-    border-radius: 8px;
-    outline: none;
-}
-
-.ai-chat-footer button {
-    background: var(--duo-green);
-    color: white;
-    border: none;
-    padding: 6px 12px;
-    margin-left: 5px;
-    border-radius: 8px;
-    font-weight: 800;
-    cursor: pointer;
-}
-
-/* Modal */
+/* Modal & Controls */
 .modal {
     display: none;
     position: fixed;
@@ -229,24 +195,12 @@ body {
     z-index: 2000;
 }
 
-.modal-content { width: 90%; max-width: 550px; position: relative; }
+.modal-content { width: 90%; max-width: 500px; position: relative; }
 .close-btn { position: absolute; top: 15px; right: 20px; font-size: 28px; font-weight: 800; cursor: pointer; }
-
-.code-box {
-    background: #1e293b;
-    color: #38bdf8;
-    padding: 1rem;
-    border-radius: 12px;
-    margin: 1rem 0;
-    max-height: 200px;
-    overflow-y: auto;
-}
-
+.code-box { background: #1e293b; color: #38bdf8; padding: 1rem; border-radius: 12px; margin: 1rem 0; max-height: 180px; overflow-y: auto; }
 .form-group { margin-bottom: 1rem; }
 .form-group label { display: block; font-weight: 700; margin-bottom: 5px; }
-.form-group input, .form-group textarea {
-    width: 100%; padding: 10px; border: 2px solid var(--duo-gray); border-radius: 10px;
-}
+.form-group input, .form-group textarea { width: 100%; padding: 8px; border: 2px solid var(--duo-gray); border-radius: 8px; }
 
 .duo-btn { border: none; padding: 12px 20px; border-radius: 12px; font-weight: 800; color: white; cursor: pointer; }
 .w-100 { width: 100%; }
@@ -256,4 +210,4 @@ body {
 .bg-orange { background: var(--duo-orange); }
 
 .duo-table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
-.duo-table th, .duo-table td { padding: 12px; border-bottom: 2px solid var(--duo-gray); text-align: left; }
+.duo-table th, .duo-table td { padding: 10px; border-bottom: 2px solid var(--duo-gray); text-align: left; }
