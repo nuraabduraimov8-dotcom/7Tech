@@ -15,8 +15,8 @@
             <h2>S7 <span>ROBOTICS</span></h2>
         </div>
         
-        <!-- Header Statuses (Duolingo Header) -->
-        <div class="duo-stats">
+        <!-- Header Statuses (Тек студент режимінде көрінеді) -->
+        <div class="duo-stats" id="studentStats">
             <div class="stat-item" title="Күнделікті белсенділік">
                 🔥 <span id="streakCount">3</span>
             </div>
@@ -41,52 +41,31 @@
         <main id="studentView" class="view-section active">
             <div class="duo-layout">
                 
-                <!-- Сол жақ: Сабақ картасы (Lesson Map) -->
+                <!-- Сол жақ: Сабақ картасы -->
                 <div class="lesson-map">
-                    <h2 class="section-title">🤖 1-Модуль: Arduino Негіздері</h2>
+                    <h2 class="section-title">🤖 Arduino IDE Курсы</h2>
                     
-                    <div class="map-node completed">
-                        <button class="node-btn duo-btn-green" title="1-сабақ">
-                            ✓
-                        </button>
-                        <span class="node-label">Arduino-мен танысу</span>
-                    </div>
-
-                    <div class="map-connector active"></div>
-
-                    <div class="map-node active">
-                        <button class="node-btn duo-btn-primary Pulse" onclick="openLessonModal()" title="2-сабақ">
-                            ⭐
-                        </button>
-                        <span class="node-label">Ultrasonic Sensor</span>
-                    </div>
-
-                    <div class="map-connector"></div>
-
-                    <div class="map-node locked">
-                        <button class="node-btn duo-btn-gray" title="3-сабақ">
-                            🔒
-                        </button>
-                        <span class="node-label">Servo Мотор</span>
+                    <div id="lessonsContainer">
+                        <!-- Сабақтар JS арқылы динамикалы шығады -->
                     </div>
                 </div>
 
-                <!-- Оң жақ: Оқушы профилі және Прогресс -->
+                <!-- Оң жақ: Студент профилі -->
                 <div class="sidebar">
                     <div class="duo-card">
-                        <h3>🏆 Апталық лига</h3>
-                        <p>Сіз <strong>Алтын лигадасыз</strong>!</p>
+                        <h3>🏆 Алтын лига</h3>
+                        <p>Орныңыз: <strong>#3 орын</strong></p>
                         <div class="progress-bar-container">
                             <div class="progress-bar" id="levelProgress" style="width: 60%;"></div>
                         </div>
-                        <small>Келесі деңгейге дейін: 80 XP</small>
+                        <small>Келесі деңгейге: 80 XP</small>
                     </div>
 
                     <div class="duo-card">
                         <h3>🎯 Күндік мақсат</h3>
-                        <p>Күніне 50 XP жинау</p>
+                        <p>50 XP / 100 XP</p>
                         <div class="progress-bar-container">
-                            <div class="progress-bar bg-orange" style="width: 80%;"></div>
+                            <div class="progress-bar bg-orange" style="width: 50%;"></div>
                         </div>
                     </div>
                 </div>
@@ -119,34 +98,48 @@
         </main>
     </div>
 
-    <!-- LESSON MODAL (Интерактивті сабақ терезесі) -->
+    <!-- AI ASSISTANT CHATBOT (ИИ-Ассистент) -->
+    <div class="ai-chat-widget">
+        <button class="ai-toggle-btn" onclick="toggleAIChat()">🤖 ИИ Подсказка</button>
+        
+        <div class="ai-chat-window" id="aiChatWindow">
+            <div class="ai-chat-header">
+                <span>🤖 AI Robotics Mentor</span>
+                <span class="close-chat" onclick="toggleAIChat()">&times;</span>
+            </div>
+            <div class="ai-chat-body" id="aiChatBody">
+                <div class="chat-msg ai-msg">
+                    Сәлем! Мен AI Ментормын. Сабақ немесе Arduino коды бойынша сұрағың болса, менен сұра! 😊
+                </div>
+            </div>
+            <div class="ai-chat-footer">
+                <input type="text" id="aiInput" placeholder="Сұрағыңды жаз..." onkeypress="handleAIPress(event)">
+                <button onclick="sendAIMessage()">Жіберу</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- LESSON MODAL -->
     <div id="lessonModal" class="modal">
         <div class="modal-content duo-card">
             <span class="close-btn" onclick="closeLessonModal()">&times;</span>
             
-            <h2>📡 Ultrasonic Sensor (HC-SR04)</h2>
-            <p class="subtitle">Ультрадыбыстық сенсормен қашықтықты өлшеуді үйренеміз!</p>
+            <h2 id="modalTitle">Сабақ тақырыбы</h2>
+            <p class="subtitle" id="modalDesc">Сипаттамасы</p>
 
             <div class="modal-body">
                 <div class="code-box">
-                    <h4>💻 Arduino Коды:</h4>
-                    <pre><code>int trigPin = 9;
-int echoPin = 10;
-
-void setup() {
-  Serial.begin(9600);
-  pinMode(trigPin, OUTPUT);
-  pinMode(echoPin, INPUT);
-}</code></pre>
+                    <h4>💻 Arduino IDE Дайын Коды:</h4>
+                    <pre><code id="modalCode">// Код осы жерде шығады</code></pre>
                 </div>
 
                 <form id="submissionForm" onsubmit="submitProject(event)">
                     <div class="form-group">
-                        <label>📝 Жоба кодыңыз немесе түсініктеме:</label>
+                        <label>📝 Кодыңыз немесе түсініктемеңіз:</label>
                         <textarea id="projectCode" placeholder="Кодты осы жерге қойыңыз..." required></textarea>
                     </div>
                     <div class="form-group">
-                        <label>🔗 Жоба видеосы / Tinkercad сілтемесі:</label>
+                        <label>🔗 Жоба сілтемесі (Tinkercad / Drive):</label>
                         <input type="url" id="projectMedia" placeholder="https://..." required>
                     </div>
                     <button type="submit" class="duo-btn duo-btn-green w-100">Жіберу (+50 XP) 🚀</button>
