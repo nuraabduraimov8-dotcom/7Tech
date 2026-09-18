@@ -1,4 +1,4 @@
-const MENTOR_SECRET_PASSWORD = "admin"; 
+const MENTOR_SECRET_KEY = "admin"; 
 
 const defaultLessons = [
     { id: 1, title: "1. LED Blink", desc: "13-пиндегі диодты жыпылықтату.", icon: "💡", status: "active", code: "void setup() {\n  pinMode(13, OUTPUT);\n}\nvoid loop() {\n  digitalWrite(13, HIGH);\n  delay(1000);\n  digitalWrite(13, LOW);\n  delay(1000);\n}" },
@@ -6,10 +6,9 @@ const defaultLessons = [
     { id: 3, title: "3. Potentiometer", desc: "Аналогты сигналмен жарықтық реттеу.", icon: "🎛️", status: "locked", code: "void setup() { pinMode(9, OUTPUT); }\nvoid loop() { analogWrite(9, analogRead(A0)/4); }" }
 ];
 
-let appState = JSON.parse(localStorage.getItem("s7_lms_db_v5")) || {
-    currentUser: null,
-    generatedCode: null,
-    tempUser: null,
+let appState = JSON.parse(localStorage.getItem("s7_lms_db_v6")) || {
+    users: [],          // Барлық тіркелген қолданушылар тізімі
+    currentUser: null,  // Қазір жүйеге кіріп тұрған қолданушы
     streak: 1,
     lastLoginDate: null,
     xp: 0,
@@ -18,7 +17,7 @@ let appState = JSON.parse(localStorage.getItem("s7_lms_db_v5")) || {
 };
 
 function saveData() {
-    localStorage.setItem("s7_lms_db_v5", JSON.stringify(appState));
+    localStorage.setItem("s7_lms_db_v6", JSON.stringify(appState));
 }
 
 window.onload = function() {
@@ -28,14 +27,13 @@ window.onload = function() {
 function checkSession() {
     const user = appState.currentUser;
     document.getElementById("authContainer").style.display = "none";
-    document.getElementById("verifyContainer").style.display = "none";
     document.getElementById("studentApp").style.display = "none";
     document.getElementById("mentorApp").style.display = "none";
 
     if (!user) {
         document.getElementById("authContainer").style.display = "flex";
     } else if (user.role === "student") {
-        updateStreak(); // Стрикті есептеу және сақтау
+        updateStreak(); // Стрикті сақтау және жаңарту
         document.getElementById("studentApp").style.display = "block";
         document.getElementById("studentNameDisplay").innerText = user.name;
         document.getElementById("xpCount").innerText = appState.xp;
@@ -47,65 +45,85 @@ function checkSession() {
     }
 }
 
+// Формалар арасында ауысу (Кіру / Тіркелу)
+function switchAuthMode(mode) {
+    const loginForm = document.getElementById("loginForm");
+    const regForm = document.getElementById("regForm");
+    const loginBtn = document.getElementById("loginTabBtn");
+    const regBtn = document.getElementById("regTabBtn");
+
+    if (mode === 'login') {
+        loginForm.style.display = "block";
+        regForm.style.display = "none";
+        loginBtn.className = "duo-btn duo-btn-primary";
+        regBtn.className = "duo-btn duo-btn-gray";
+    } else {
+        loginForm.style.display = "none";
+        regForm.style.display = "block";
+        loginBtn.className = "duo-btn duo-btn-gray";
+        regBtn.className = "duo-btn duo-btn-primary";
+    }
+}
+
 function toggleMentorPasswordInput() {
-    const role = document.getElementById("authRole").value;
+    const role = document.getElementById("regRole").value;
     document.getElementById("mentorPasswordGroup").style.display = (role === "mentor") ? "block" : "none";
 }
 
-// 1. НӨМІРГЕ СМС КОД ЖІБЕРУ
-function handleSendSms(e) {
+// 1. ТІРКЕЛУ ЛОГИКАСЫ
+function handleRegister(e) {
     e.preventDefault();
-    const role = document.getElementById("authRole").value;
-    const name = document.getElementById("authName").value;
-    const email = document.getElementById("authEmail").value;
-    const phone = document.getElementById("authPhone").value.trim();
-    const password = document.getElementById("mentorPassword").value;
+    const role = document.getElementById("regRole").value;
+    const name = document.getElementById("regName").value.trim();
+    const email = document.getElementById("regEmail").value.trim().toLowerCase();
+    const phone = document.getElementById("regPhone").value.trim();
+    const password = document.getElementById("regPassword").value.trim();
+    const mentorSecret = document.getElementById("mentorSecret").value.trim();
 
-    if (role === "mentor" && password !== MENTOR_SECRET_PASSWORD) {
-        alert("❌ Қате Ментор құпия сөзі!");
+    if (role === "mentor" && mentorSecret !== MENTOR_SECRET_KEY) {
+        alert("❌ Ментордың арнайы коды қате!");
         return;
     }
 
-    if (phone.length < 10) {
-        alert("❌ Телефон нөмірін толық енгізіңіз!");
+    // Бұрын тіркелгенін тексеру
+    const existingUser = appState.users.find(u => u.email === email || u.phone === phone);
+    if (existingUser) {
+        alert("⚠️ Бұл email немесе телефон нөмірі бұрын тіркелген! Кіру бөліміне өтіңіз.");
+        switchAuthMode('login');
         return;
     }
 
-    // 4 таңбалы SMS код құрастыру
-    const randomCode = Math.floor(1000 + Math.random() * 9000).toString();
-    appState.generatedCode = randomCode;
-    appState.tempUser = { role, name, email, phone };
+    const newUser = { role, name, email, phone, password };
+    appState.users.push(newUser);
+    appState.currentUser = newUser;
+    saveData();
 
-    // ТЕСТ РЕЖИМІ: Экранға шығару (Нақты SMS Twilio арқылы арнайы серверен кетеді)
-    alert(`📲 [SMS ЖІБЕРІЛДІ] ${phone} нөміріне келген растау коды: ${randomCode}`);
-    
-    showVerifyWindow();
+    alert("🎉 Сәтті тіркелдіңіз!");
+    checkSession();
 }
 
-function showVerifyWindow() {
-    document.getElementById("authContainer").style.display = "none";
-    document.getElementById("verifyContainer").style.display = "flex";
-    document.getElementById("userPhoneDisplay").innerText = appState.tempUser.phone;
-}
-
-function backToAuth() {
-    document.getElementById("verifyContainer").style.display = "none";
-    document.getElementById("authContainer").style.display = "flex";
-}
-
-// 2. ЕНГІЗІЛГЕН СМС КОДТЫ ТЕКСЕРУ
-function handleVerifySubmit(e) {
+// 2. КІРУ (ВОЙТИ) ЛОГИКАСЫ
+function handleLogin(e) {
     e.preventDefault();
-    const inputCode = document.getElementById("verifyCode").value.trim();
+    const identifier = document.getElementById("loginIdentifier").value.trim().toLowerCase();
+    const password = document.getElementById("loginPassword").value.trim();
 
-    if (inputCode === appState.generatedCode) {
-        appState.currentUser = appState.tempUser;
-        appState.generatedCode = null;
-        appState.tempUser = null;
+    // Егер базада ешкім болмаса
+    if (appState.users.length === 0) {
+        alert("❌ Жүйеде ешқандай аккаунт табылмады. Алдымен Тіркеліңіз!");
+        switchAuthMode('register');
+        return;
+    }
+
+    // Пайдаланушыны Email немесе Телефон бойынша іздеу
+    const user = appState.users.find(u => (u.email === identifier || u.phone === identifier) && u.password === password);
+
+    if (user) {
+        appState.currentUser = user;
         saveData();
         checkSession();
     } else {
-        alert("❌ Код қате! Қайтадан тексеріп енгізіңіз.");
+        alert("❌ Логин немесе құпия сөз қате! Қайтадан тексеріңіз.");
     }
 }
 
@@ -139,7 +157,7 @@ function logout() {
     location.reload();
 }
 
-// САБАҚТАРДЫ КӨРСЕТУ ЖӘНЕ КОДТЫ ТЕКСЕРУ (COMPILER)
+// САБАҚТАР ЖӘНЕ КАЗАХША COMPILER ТЕКСЕРІСІ
 function renderLessons() {
     const container = document.getElementById("lessonsContainer");
     if (!container) return;
