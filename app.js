@@ -1,92 +1,259 @@
-let appState = {
-    xp: 120,
-    streak: 3,
-    gems: 5,
-    submissions: [
-        {
-            id: 1,
-            student: "Асан Мұратов",
-            lesson: "2-сабақ: Ultrasonic Sensor",
-            media: "https://tinkercad.com/demo",
-            status: "Күтілуде"
-        }
-    ]
-};
-
-// Рөлді ауыстыру
-function switchRole() {
-    const role = document.getElementById("roleSelect").value;
-    const studentView = document.getElementById("studentView");
-    const mentorView = document.getElementById("mentorView");
-
-    if (role === "student") {
-        studentView.classList.add("active");
-        mentorView.classList.remove("active");
-    } else {
-        studentView.classList.remove("active");
-        mentorView.classList.add("active");
-        renderMentorTable();
-    }
+* ⁠* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Nunito', sans-serif;
 }
 
-// Modal басқару
-function openLessonModal() {
-    document.getElementById("lessonModal").style.display = "flex";
+body {
+    background-color: #f7f7f7;
+    color: #4b4b4b;
 }
 
-function closeLessonModal() {
-    document.getElementById("lessonModal").style.display = "none";
+:root {
+    --duo-green: #58cc02;
+    --duo-green-shadow: #46a302;
+    --duo-blue: #1cb0f6;
+    --duo-blue-shadow: #1899d6;
+    --duo-gray: #e5e5e5;
+    --duo-gray-shadow: #cecece;
+    --duo-orange: #ff9600;
 }
 
-// Тапсырма жіберу
-function submitProject(event) {
-    event.preventDefault();
-    const code = document.getElementById("projectCode").value;
-    const media = document.getElementById("projectMedia").value;
-
-    appState.submissions.push({
-        id: Date.now(),
-        student: "Асан Мұратов",
-        lesson: "2-сабақ: Ultrasonic Sensor",
-        media: media,
-        status: "Күтілуде"
-    });
-
-    alert("🎉 Тапсырма менторға жіберілді! Тексеруді күтіңіз.");
-    closeLessonModal();
-    document.getElementById("submissionForm").reset();
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: white;
+    border-bottom: 2px solid var(--duo-gray);
+    padding: 0.8rem 2rem;
 }
 
-// Ментор кестесін жаңарту
-function renderMentorTable() {
-    const tbody = document.getElementById("mentorTableBody");
-    tbody.innerHTML = "";
-
-    appState.submissions.forEach((item) => {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-            <td><strong>${item.student}</strong></td>
-            <td>${item.lesson}</td>
-            <td><a href="${item.media}" target="_blank">Сілтемені ашу</a></td>
-            <td><span style="color: ${item.status === 'Қабылданды' ? '#58cc02' : '#ff9600'}; font-weight:800;">${item.status}</span></td>
-            <td>
-                ${item.status === 'Күтілуде' 
-                    ? `<button class="duo-btn duo-btn-green" style="padding:6px 12px; font-size:12px;" onclick="approveSubmission(${item.id})">Қабылдау (+50 XP)</button>` 
-                    : '✅ Тексерілді'}
-            </td>
-        `;
-        tbody.appendChild(tr);
-    });
+.logo h2 {
+    font-weight: 900;
+    color: var(--duo-green);
 }
 
-// Ментордың растауы және XP қосу
-function approveSubmission(id) {
-    const sub = appState.submissions.find(s => s.id === id);
-    if (sub) {
-        sub.status = "Қабылданды";
-        appState.xp += 50;
-        document.getElementById("xpCount").innerText = appState.xp;
-        renderMentorTable();
-        alert("👏 Жоба қабылданды! Студентке +50 XP берілді.");
-    }
+.logo span { color: var(--duo-blue); }
+
+.duo-stats {
+    display: flex;
+    gap: 1.5rem;
+    font-weight: 800;
+    font-size: 18px;
 }
+
+.role-selector select {
+    padding: 8px 12px;
+    border-radius: 12px;
+    border: 2px solid var(--duo-gray);
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+}
+
+.view-section { display: none; }
+.view-section.active { display: block; }
+
+.duo-layout {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 2rem;
+}
+
+.duo-card {
+    background: white;
+    border: 2px solid var(--duo-gray);
+    border-radius: 16px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+/* Lesson Map */
+.lesson-map {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.section-title {
+    font-weight: 800;
+    margin-bottom: 2rem;
+}
+
+.map-node {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.node-btn {
+    width: 75px;
+    height: 75px;
+    border-radius: 50%;
+    border: none;
+    font-size: 28px;
+    color: white;
+    cursor: pointer;
+    transition: transform 0.1s;
+}
+
+.node-btn:active {
+    transform: translateY(4px);
+    box-shadow: none !important;
+}
+
+.duo-btn-green { background: var(--duo-green); box-shadow: 0 6px 0 var(--duo-green-shadow); }
+.duo-btn-primary { background: var(--duo-blue); box-shadow: 0 6px 0 var(--duo-blue-shadow); }
+.duo-btn-gray { background: var(--duo-gray); box-shadow: 0 6px 0 var(--duo-gray-shadow); color: #a5a5a5; }
+
+.map-connector {
+    width: 8px;
+    height: 35px;
+    background: var(--duo-gray);
+    margin: 6px 0;
+    border-radius: 4px;
+}
+
+.map-connector.active { background: var(--duo-green); }
+
+.node-label {
+    font-weight: 800;
+    margin-top: 6px;
+    font-size: 13px;
+    text-align: center;
+}
+
+/* AI Chat Widget */
+.ai-chat-widget {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 1000;
+}
+
+.ai-toggle-btn {
+    background: var(--duo-blue);
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 25px;
+    font-weight: 800;
+    box-shadow: 0 4px 0 var(--duo-blue-shadow);
+    cursor: pointer;
+}
+
+.ai-chat-window {
+    display: none;
+    flex-direction: column;
+    width: 320px;
+    height: 400px;
+    background: white;
+    border: 2px solid var(--duo-gray);
+    border-radius: 16px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    position: absolute;
+    bottom: 60px;
+    right: 0;
+    overflow: hidden;
+}
+
+.ai-chat-header {
+    background: var(--duo-blue);
+    color: white;
+    padding: 12px;
+    font-weight: 800;
+    display: flex;
+    justify-content: space-between;
+}
+
+.close-chat { cursor: pointer; }
+
+.ai-chat-body {
+    flex: 1;
+    padding: 10px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.chat-msg {
+    padding: 8px 12px;
+    border-radius: 12px;
+    font-size: 13px;
+    max-width: 80%;
+}
+
+.ai-msg { background: #e0f2fe; color: #0369a1; align-self: flex-start; }
+.user-msg { background: var(--duo-green); color: white; align-self: flex-end; }
+
+.ai-chat-footer {
+    display: flex;
+    padding: 8px;
+    border-top: 1px solid var(--duo-gray);
+}
+
+.ai-chat-footer input {
+    flex: 1;
+    padding: 6px 10px;
+    border: 1px solid var(--duo-gray);
+    border-radius: 8px;
+    outline: none;
+}
+
+.ai-chat-footer button {
+    background: var(--duo-green);
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    margin-left: 5px;
+    border-radius: 8px;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+/* Modal */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.5);
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+}
+
+.modal-content { width: 90%; max-width: 550px; position: relative; }
+.close-btn { position: absolute; top: 15px; right: 20px; font-size: 28px; font-weight: 800; cursor: pointer; }
+
+.code-box {
+    background: #1e293b;
+    color: #38bdf8;
+    padding: 1rem;
+    border-radius: 12px;
+    margin: 1rem 0;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.form-group { margin-bottom: 1rem; }
+.form-group label { display: block; font-weight: 700; margin-bottom: 5px; }
+.form-group input, .form-group textarea {
+    width: 100%; padding: 10px; border: 2px solid var(--duo-gray); border-radius: 10px;
+}
+
+.duo-btn { border: none; padding: 12px 20px; border-radius: 12px; font-weight: 800; color: white; cursor: pointer; }
+.w-100 { width: 100%; }
+
+.progress-bar-container { width: 100%; height: 14px; background: var(--duo-gray); border-radius: 10px; margin: 8px 0; overflow: hidden; }
+.progress-bar { height: 100%; background: var(--duo-green); }
+.bg-orange { background: var(--duo-orange); }
+
+.duo-table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+.duo-table th, .duo-table td { padding: 12px; border-bottom: 2px solid var(--duo-gray); text-align: left; }
