@@ -15,17 +15,10 @@
             <h2>S7 <span>ROBOTICS</span></h2>
         </div>
         
-        <!-- Header Statuses (Тек студент режимінде көрінеді) -->
         <div class="duo-stats" id="studentStats">
-            <div class="stat-item" title="Күнделікті белсенділік">
-                🔥 <span id="streakCount">3</span>
-            </div>
-            <div class="stat-item" title="Тәжірибе ұпайлары">
-                ⚡ <span id="xpCount">120</span> XP
-            </div>
-            <div class="stat-item" title="Өмір саны">
-                ❤️ <span id="gemsCount">5</span>
-            </div>
+            <div class="stat-item">🔥 <span id="streakCount">3</span></div>
+            <div class="stat-item">⚡ <span id="xpCount">120</span> XP</div>
+            <div class="stat-item">❤️ <span id="gemsCount">5</span></div>
         </div>
 
         <div class="role-selector">
@@ -44,19 +37,18 @@
                 <!-- Сол жақ: Сабақ картасы -->
                 <div class="lesson-map">
                     <h2 class="section-title">🤖 Arduino IDE Курсы</h2>
-                    
-                    <div id="lessonsContainer">
-                        <!-- Сабақтар JS арқылы динамикалы шығады -->
+                    <div id="lessonsContainer" class="lessons-tree">
+                        <!-- JS арқылы толады -->
                     </div>
                 </div>
 
-                <!-- Оң жақ: Студент профилі -->
+                <!-- Оң жақ: Сайдбар -->
                 <div class="sidebar">
                     <div class="duo-card">
                         <h3>🏆 Алтын лига</h3>
                         <p>Орныңыз: <strong>#3 орын</strong></p>
                         <div class="progress-bar-container">
-                            <div class="progress-bar" id="levelProgress" style="width: 60%;"></div>
+                            <div class="progress-bar" style="width: 60%;"></div>
                         </div>
                         <small>Келесі деңгейге: 80 XP</small>
                     </div>
@@ -76,29 +68,23 @@
         <main id="mentorView" class="view-section">
             <div class="duo-card">
                 <h3>👨‍🏫 Ментор Панелі — Жобаларды тексеру</h3>
-                <p>Оқушылар жіберген тапсырмаларды тексеріп, XP беріңіз:</p>
-
-                <div class="table-responsive">
-                    <table class="duo-table">
-                        <thead>
-                            <tr>
-                                <th>Оқушы</th>
-                                <th>Тапсырма</th>
-                                <th>Код / Медиа</th>
-                                <th>Мәртебесі</th>
-                                <th>Әрекет</th>
-                            </tr>
-                        </thead>
-                        <tbody id="mentorTableBody">
-                            <!-- JS арқылы толтырылады -->
-                        </tbody>
-                    </table>
-                </div>
+                <table class="duo-table">
+                    <thead>
+                        <tr>
+                            <th>Оқушы</th>
+                            <th>Тапсырма</th>
+                            <th>Медиа</th>
+                            <th>Мәртебесі</th>
+                            <th>Әрекет</th>
+                        </tr>
+                    </thead>
+                    <tbody id="mentorTableBody"></tbody>
+                </table>
             </div>
         </main>
     </div>
 
-    <!-- AI ASSISTANT CHATBOT (ИИ-Ассистент) -->
+    <!-- AI CHAT WIDGET -->
     <div class="ai-chat-widget">
         <button class="ai-toggle-btn" onclick="toggleAIChat()">🤖 ИИ Подсказка</button>
         
@@ -108,9 +94,7 @@
                 <span class="close-chat" onclick="toggleAIChat()">&times;</span>
             </div>
             <div class="ai-chat-body" id="aiChatBody">
-                <div class="chat-msg ai-msg">
-                    Сәлем! Мен AI Ментормын. Сабақ немесе Arduino коды бойынша сұрағың болса, менен сұра! 😊
-                </div>
+                <div class="chat-msg ai-msg">Сәлем! Мен AI Ментормын. Ардуино бойынша сұрағың болса, қоя бер! 😊</div>
             </div>
             <div class="ai-chat-footer">
                 <input type="text" id="aiInput" placeholder="Сұрағыңды жаз..." onkeypress="handleAIPress(event)">
@@ -123,28 +107,20 @@
     <div id="lessonModal" class="modal">
         <div class="modal-content duo-card">
             <span class="close-btn" onclick="closeLessonModal()">&times;</span>
-            
-            <h2 id="modalTitle">Сабақ тақырыбы</h2>
-            <p class="subtitle" id="modalDesc">Сипаттамасы</p>
-
-            <div class="modal-body">
-                <div class="code-box">
-                    <h4>💻 Arduino IDE Дайын Коды:</h4>
-                    <pre><code id="modalCode">// Код осы жерде шығады</code></pre>
+            <h2 id="modalTitle">Сабақ</h2>
+            <p id="modalDesc" class="subtitle"></p>
+            <div class="code-box"><pre><code id="modalCode"></code></pre></div>
+            <form id="submissionForm" onsubmit="submitProject(event)">
+                <div class="form-group">
+                    <label>📝 Жоба коды / Түсініктеме:</label>
+                    <textarea id="projectCode" required></textarea>
                 </div>
-
-                <form id="submissionForm" onsubmit="submitProject(event)">
-                    <div class="form-group">
-                        <label>📝 Кодыңыз немесе түсініктемеңіз:</label>
-                        <textarea id="projectCode" placeholder="Кодты осы жерге қойыңыз..." required></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label>🔗 Жоба сілтемесі (Tinkercad / Drive):</label>
-                        <input type="url" id="projectMedia" placeholder="https://..." required>
-                    </div>
-                    <button type="submit" class="duo-btn duo-btn-green w-100">Жіберу (+50 XP) 🚀</button>
-                </form>
-            </div>
+                <div class="form-group">
+                    <label>🔗 Жоба сілтемесі (Tinkercad / Drive):</label>
+                    <input type="url" id="projectMedia" required>
+                </div>
+                <button type="submit" class="duo-btn duo-btn-green w-100">Жіберу (+50 XP) 🚀</button>
+            </form>
         </div>
     </div>
 
