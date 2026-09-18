@@ -1,1 +1,160 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>S7 Robotics — Duolingo Style</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+</head>
+<body>
 
+    <!-- Навигация панелі -->
+    <header class="navbar">
+        <div class="logo">
+            <h2>S7 <span>ROBOTICS</span></h2>
+        </div>
+        
+        <!-- Header Statuses (Duolingo Header) -->
+        <div class="duo-stats">
+            <div class="stat-item" title="Күнделікті белсенділік">
+                🔥 <span id="streakCount">3</span>
+            </div>
+            <div class="stat-item" title="Тәжірибе ұпайлары">
+                ⚡ <span id="xpCount">120</span> XP
+            </div>
+            <div class="stat-item" title="Өмір саны">
+                ❤️ <span id="gemsCount">5</span>
+            </div>
+        </div>
+
+        <div class="role-selector">
+            <select id="roleSelect" onchange="switchRole()">
+                <option value="student">👨‍🎓 Студент (Асан)</option>
+                <option value="mentor">👨‍🏫 Ментор (Арман ағай)</option>
+            </select>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- STUDENT VIEW -->
+        <main id="studentView" class="view-section active">
+            <div class="duo-layout">
+                
+                <!-- Сол жақ: Сабақ картасы (Lesson Map) -->
+                <div class="lesson-map">
+                    <h2 class="section-title">🤖 1-Модуль: Arduino Негіздері</h2>
+                    
+                    <div class="map-node completed">
+                        <button class="node-btn duo-btn-green" title="1-сабақ">
+                            ✓
+                        </button>
+                        <span class="node-label">Arduino-мен танысу</span>
+                    </div>
+
+                    <div class="map-connector active"></div>
+
+                    <div class="map-node active">
+                        <button class="node-btn duo-btn-primary Pulse" onclick="openLessonModal()" title="2-сабақ">
+                            ⭐
+                        </button>
+                        <span class="node-label">Ultrasonic Sensor</span>
+                    </div>
+
+                    <div class="map-connector"></div>
+
+                    <div class="map-node locked">
+                        <button class="node-btn duo-btn-gray" title="3-сабақ">
+                            🔒
+                        </button>
+                        <span class="node-label">Servo Мотор</span>
+                    </div>
+                </div>
+
+                <!-- Оң жақ: Оқушы профилі және Прогресс -->
+                <div class="sidebar">
+                    <div class="duo-card">
+                        <h3>🏆 Апталық лига</h3>
+                        <p>Сіз <strong>Алтын лигадасыз</strong>!</p>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar" id="levelProgress" style="width: 60%;"></div>
+                        </div>
+                        <small>Келесі деңгейге дейін: 80 XP</small>
+                    </div>
+
+                    <div class="duo-card">
+                        <h3>🎯 Күндік мақсат</h3>
+                        <p>Күніне 50 XP жинау</p>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar bg-orange" style="width: 80%;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- MENTOR VIEW -->
+        <main id="mentorView" class="view-section">
+            <div class="duo-card">
+                <h3>👨‍🏫 Ментор Панелі — Жобаларды тексеру</h3>
+                <p>Оқушылар жіберген тапсырмаларды тексеріп, XP беріңіз:</p>
+
+                <div class="table-responsive">
+                    <table class="duo-table">
+                        <thead>
+                            <tr>
+                                <th>Оқушы</th>
+                                <th>Тапсырма</th>
+                                <th>Код / Медиа</th>
+                                <th>Мәртебесі</th>
+                                <th>Әрекет</th>
+                            </tr>
+                        </thead>
+                        <tbody id="mentorTableBody">
+                            <!-- JS арқылы толтырылады -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- LESSON MODAL (Интерактивті сабақ терезесі) -->
+    <div id="lessonModal" class="modal">
+        <div class="modal-content duo-card">
+            <span class="close-btn" onclick="closeLessonModal()">&times;</span>
+            
+            <h2>📡 Ultrasonic Sensor (HC-SR04)</h2>
+            <p class="subtitle">Ультрадыбыстық сенсормен қашықтықты өлшеуді үйренеміз!</p>
+
+            <div class="modal-body">
+                <div class="code-box">
+                    <h4>💻 Arduino Коды:</h4>
+                    <pre><code>int trigPin = 9;
+int echoPin = 10;
+
+void setup() {
+  Serial.begin(9600);
+  pinMode(trigPin, OUTPUT);
+  pinMode(echoPin, INPUT);
+}</code></pre>
+                </div>
+
+                <form id="submissionForm" onsubmit="submitProject(event)">
+                    <div class="form-group">
+                        <label>📝 Жоба кодыңыз немесе түсініктеме:</label>
+                        <textarea id="projectCode" placeholder="Кодты осы жерге қойыңыз..." required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>🔗 Жоба видеосы / Tinkercad сілтемесі:</label>
+                        <input type="url" id="projectMedia" placeholder="https://..." required>
+                    </div>
+                    <button type="submit" class="duo-btn duo-btn-green w-100">Жіберу (+50 XP) 🚀</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
