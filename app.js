@@ -6,9 +6,9 @@ const defaultLessons = [
     { id: 3, title: "3. Potentiometer", desc: "Аналогты сигналмен жарықтық реттеу.", icon: "🎛️", status: "locked", code: "void setup() { pinMode(9, OUTPUT); }\nvoid loop() { analogWrite(9, analogRead(A0)/4); }" }
 ];
 
-let appState = JSON.parse(localStorage.getItem("s7_lms_db_v6")) || {
-    users: [],          // Барлық тіркелген қолданушылар тізімі
-    currentUser: null,  // Қазір жүйеге кіріп тұрған қолданушы
+let appState = JSON.parse(localStorage.getItem("s7_lms_db_v7")) || {
+    users: [],          // Базадағы барлық қолданушылар
+    currentUser: null,  // Ағымдағы жүйеге кірген қолданушы
     streak: 1,
     lastLoginDate: null,
     xp: 0,
@@ -17,7 +17,7 @@ let appState = JSON.parse(localStorage.getItem("s7_lms_db_v6")) || {
 };
 
 function saveData() {
-    localStorage.setItem("s7_lms_db_v6", JSON.stringify(appState));
+    localStorage.setItem("s7_lms_db_v7", JSON.stringify(appState));
 }
 
 window.onload = function() {
@@ -33,7 +33,7 @@ function checkSession() {
     if (!user) {
         document.getElementById("authContainer").style.display = "flex";
     } else if (user.role === "student") {
-        updateStreak(); // Стрикті сақтау және жаңарту
+        updateStreak(); // Стрикті тексеру және сақтау
         document.getElementById("studentApp").style.display = "block";
         document.getElementById("studentNameDisplay").innerText = user.name;
         document.getElementById("xpCount").innerText = appState.xp;
@@ -45,7 +45,7 @@ function checkSession() {
     }
 }
 
-// Формалар арасында ауысу (Кіру / Тіркелу)
+// Войти / Тіркелу формасын ауыстыру
 function switchAuthMode(mode) {
     const loginForm = document.getElementById("loginForm");
     const regForm = document.getElementById("regForm");
@@ -70,7 +70,7 @@ function toggleMentorPasswordInput() {
     document.getElementById("mentorPasswordGroup").style.display = (role === "mentor") ? "block" : "none";
 }
 
-// 1. ТІРКЕЛУ ЛОГИКАСЫ
+// 1. ТІРКЕЛУ (АҚПАРАТ МЕН ПАРОЛЬДІ САҚТАУ)
 function handleRegister(e) {
     e.preventDefault();
     const role = document.getElementById("regRole").value;
@@ -85,10 +85,10 @@ function handleRegister(e) {
         return;
     }
 
-    // Бұрын тіркелгенін тексеру
+    // Нөмір немесе email бұрын тіркелгенін тексеру
     const existingUser = appState.users.find(u => u.email === email || u.phone === phone);
     if (existingUser) {
-        alert("⚠️ Бұл email немесе телефон нөмірі бұрын тіркелген! Кіру бөліміне өтіңіз.");
+        alert("⚠️ Бұл email немесе телефон бұрын тіркелген! Кіру батырмасын басыңыз.");
         switchAuthMode('login');
         return;
     }
@@ -102,20 +102,19 @@ function handleRegister(e) {
     checkSession();
 }
 
-// 2. КІРУ (ВОЙТИ) ЛОГИКАСЫ
+// 2. ВОЙТИ (ПАРOЛЬМЕН КІРУ)
 function handleLogin(e) {
     e.preventDefault();
     const identifier = document.getElementById("loginIdentifier").value.trim().toLowerCase();
     const password = document.getElementById("loginPassword").value.trim();
 
-    // Егер базада ешкім болмаса
     if (appState.users.length === 0) {
-        alert("❌ Жүйеде ешқандай аккаунт табылмады. Алдымен Тіркеліңіз!");
+        alert("❌ Аккаунт табылмады. Алдымен Тіркеліңіз!");
         switchAuthMode('register');
         return;
     }
 
-    // Пайдаланушыны Email немесе Телефон бойынша іздеу
+    // Email немесе Телефон + Пароль сәйкестігін тексеру
     const user = appState.users.find(u => (u.email === identifier || u.phone === identifier) && u.password === password);
 
     if (user) {
@@ -123,7 +122,7 @@ function handleLogin(e) {
         saveData();
         checkSession();
     } else {
-        alert("❌ Логин немесе құпия сөз қате! Қайтадан тексеріңіз.");
+        alert("❌ Пароль немесе логин қате!");
     }
 }
 
@@ -140,9 +139,9 @@ function updateStreak() {
         const diffDays = Math.round((currentDate - lastDate) / (1000 * 60 * 60 * 24));
 
         if (diffDays === 1) {
-            appState.streak += 1; // Кеше кірген болса +1 күн
+            appState.streak += 1; // Кеше кірген болса, стрик +1
         } else if (diffDays > 1) {
-            appState.streak = 1;  // Күн өткізіп алса, қайтадан 1 болады
+            appState.streak = 1;  // Күн өткізіп алса, сброс болады
         }
     }
 
@@ -157,7 +156,7 @@ function logout() {
     location.reload();
 }
 
-// САБАҚТАР ЖӘНЕ КАЗАХША COMPILER ТЕКСЕРІСІ
+// САБАҚТАР ЖӘНЕ COMPILER
 function renderLessons() {
     const container = document.getElementById("lessonsContainer");
     if (!container) return;
