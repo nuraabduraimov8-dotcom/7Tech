@@ -9,7 +9,6 @@
 </head>
 <body>
 
-    <!-- Навигация панелі -->
     <header class="navbar">
         <div class="logo">
             <h2>S7 <span>ROBOTICS</span></h2>
@@ -17,14 +16,14 @@
         
         <div class="duo-stats" id="studentStats">
             <div class="stat-item">🔥 <span id="streakCount">3</span></div>
-            <div class="stat-item">⚡ <span id="xpCount">120</span> XP</div>
+            <div class="stat-item">⚡ <span id="xpCount">0</span> XP</div>
             <div class="stat-item">❤️ <span id="gemsCount">5</span></div>
         </div>
 
         <div class="role-selector">
             <select id="roleSelect" onchange="switchRole()">
                 <option value="student">👨‍🎓 Студент (Асан)</option>
-                <option value="mentor">👨‍🏫 Ментор (Арман ағай)</option>
+                <option value="mentor">👨‍🏫 Ментор (Арман)</option>
             </select>
         </div>
     </header>
@@ -33,16 +32,11 @@
         <!-- STUDENT VIEW -->
         <main id="studentView" class="view-section active">
             <div class="duo-layout">
-                
-                <!-- Сол жақ: Сабақ картасы -->
                 <div class="lesson-map">
                     <h2 class="section-title">🤖 Arduino IDE Курсы</h2>
-                    <div id="lessonsContainer" class="lessons-tree">
-                        <!-- JS арқылы толады -->
-                    </div>
+                    <div id="lessonsContainer" class="lessons-tree"></div>
                 </div>
 
-                <!-- Оң жақ: Сайдбар -->
                 <div class="sidebar">
                     <div class="duo-card">
                         <h3>🏆 Алтын лига</h3>
@@ -51,14 +45,6 @@
                             <div class="progress-bar" style="width: 60%;"></div>
                         </div>
                         <small>Келесі деңгейге: 80 XP</small>
-                    </div>
-
-                    <div class="duo-card">
-                        <h3>🎯 Күндік мақсат</h3>
-                        <p>50 XP / 100 XP</p>
-                        <div class="progress-bar-container">
-                            <div class="progress-bar bg-orange" style="width: 50%;"></div>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -74,6 +60,7 @@
                             <th>Оқушы</th>
                             <th>Тапсырма</th>
                             <th>Медиа</th>
+                            <th>Код</th>
                             <th>Мәртебесі</th>
                             <th>Әрекет</th>
                         </tr>
@@ -87,14 +74,13 @@
     <!-- AI CHAT WIDGET -->
     <div class="ai-chat-widget">
         <button class="ai-toggle-btn" onclick="toggleAIChat()">🤖 ИИ Подсказка</button>
-        
         <div class="ai-chat-window" id="aiChatWindow">
             <div class="ai-chat-header">
                 <span>🤖 AI Robotics Mentor</span>
                 <span class="close-chat" onclick="toggleAIChat()">&times;</span>
             </div>
             <div class="ai-chat-body" id="aiChatBody">
-                <div class="chat-msg ai-msg">Сәлем! Мен AI Ментормын. Ардуино бойынша сұрағың болса, қоя бер! 😊</div>
+                <div class="chat-msg ai-msg">Сәлем! Код бойынша сұрағың болса, менен сұра! 😊</div>
             </div>
             <div class="ai-chat-footer">
                 <input type="text" id="aiInput" placeholder="Сұрағыңды жаз..." onkeypress="handleAIPress(event)">
@@ -121,6 +107,15 @@
                 </div>
                 <button type="submit" class="duo-btn duo-btn-green w-100">Жіберу (+50 XP) 🚀</button>
             </form>
+        </div>
+    </div>
+
+    <!-- MENTOR CODE VIEW MODAL -->
+    <div id="mentorCodeModal" class="modal">
+        <div class="modal-content duo-card">
+            <span class="close-btn" onclick="closeMentorCodeModal()">&times;</span>
+            <h2>💻 Оқушының коды</h2>
+            <div class="code-box"><pre><code id="mentorCodeContent"></code></pre></div>
         </div>
     </div>
 
