@@ -1,10 +1,24 @@
-// МЕНТОР ТІРКЕЛУ ШҮІН АРНАЙЫ ҚҰПИЯ КОД (ОСЫ КОДТЫ ОЗГЕРТСЕНІЗ БОЛАДЫ)
-const MENTOR_SECRET_CODE = "admin";
+// 🔥 FIREBASE БАПТАУЫ (Осы жерге Firebase консоліндегі кілттеріңізді қойыңыз)
+const firebaseConfig = {
+    apiKey: "YOUR_API_KEY",
+    authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+    databaseURL: "https://YOUR_PROJECT_ID-default-rtdb.firebaseio.com",
+    projectId: "YOUR_PROJECT_ID",
+    storageBucket: "YOUR_PROJECT_ID.appspot.com",
+    messagingSenderId: "YOUR_SENDER_ID",
+    appId: "YOUR_APP_ID"
+};
 
-// 8 ТОЛЫҚ САБАҚ ТІЗІМІ
+// Firebase іске қосу
+if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+}
+const db = firebase.database();
+
+// Бастапқы сабақтар тізімі
 const defaultLessons = [
     { id: 1, title: "1. LED Blink", desc: "13-пиндегі диодты жыпылықтату.", icon: "💡", status: "active", code: "void setup() {\n  pinMode(13, OUTPUT);\n}\nvoid loop() {\n  digitalWrite(13, HIGH);\n  delay(1000);\n  digitalWrite(13, LOW);\n  delay(1000);\n}" },
-    { id: 2, title: "2. Button & LED", desc: "Батырма арқылы диодты қосу.", icon: "locked", status: "locked", code: "int btn = 2, led = 13;\nvoid setup() {\n  pinMode(led, OUTPUT);\n  pinMode(btn, INPUT);\n}\nvoid loop() {\n  if(digitalRead(btn) == HIGH) digitalWrite(led, HIGH);\n  else digitalWrite(led, LOW);\n}" },
+    { id: 2, title: "2. Button & LED", desc: "Батырма арқылы диодты қосу.", icon: "🔘", status: "locked", code: "int btn = 2, led = 13;\nvoid setup() {\n  pinMode(led, OUTPUT);\n  pinMode(btn, INPUT);\n}\nvoid loop() {\n  if(digitalRead(btn) == HIGH) digitalWrite(led, HIGH);\n  else digitalWrite(led, LOW);\n}" },
     { id: 3, title: "3. Potentiometer PWM", desc: "Аналогты сигналмен LED жарықтығын реттеу.", icon: "🎛️", status: "locked", code: "void setup() { pinMode(9, OUTPUT); }\nvoid loop() { analogWrite(9, analogRead(A0)/4); }" },
     { id: 4, title: "4. Servo Motor Control", desc: "Сервомоторды 0-ден 180 градусқа бұру.", icon: "🦾", status: "locked", code: "#include <Servo.h>\nServo myservo;\nvoid setup() { myservo.attach(9); }\nvoid loop() { myservo.write(90); delay(1000); myservo.write(0); delay(1000); }" },
     { id: 5, title: "5. Ultrasonic Sensor HC-SR04", desc: "Ультратавыш сенсорымен қашықтықты өлшеу.", icon: "📏", status: "locked", code: "int trig=9, echo=10;\nvoid setup() {\n  pinMode(trig, OUTPUT); pinMode(echo, INPUT);\n  Serial.begin(9600);\n}\nvoid loop() {\n  digitalWrite(trig, LOW); delayMicroseconds(2);\n  digitalWrite(trig, HIGH); delayMicroseconds(10);\n  digitalWrite(trig, LOW);\n  long duration = pulseIn(echo, HIGH);\n  int distance = duration * 0.034 / 2;\n  Serial.println(distance);\n  delay(500);\n}" },
@@ -13,10 +27,9 @@ const defaultLessons = [
     { id: 8, title: "8. TDS Water Sensor", desc: "Су сапасын (TDS) өлшеу сенсоры.", icon: "💧", status: "locked", code: "void setup() { Serial.begin(9600); }\nvoid loop() {\n  int val = analogRead(A0);\n  Serial.print(\"TDS Value: \"); Serial.println(val);\n  delay(1000);\n}" }
 ];
 
-// База нұсқасы v10
-let appState = JSON.parse(localStorage.getItem("s7_lms_db_v10")) || {
+let appState = {
     users: [],          
-    currentUser: null,  
+    currentUser: JSON.parse(localStorage.getItem("s7_current_user")) || null,  
     mentorRequests: [], 
     streak: 1,
     lastLoginDate: null,
@@ -25,11 +38,31 @@ let appState = JSON.parse(localStorage.getItem("s7_lms_db_v10")) || {
     submissions: []
 };
 
-function saveData() {
-    localStorage.setItem("s7_lms_db_v10", JSON.stringify(appState));
+// 🌐 БҰЛТТЫ БАЗАМЕН СИНХРОНИЗАЦИЯ (ТЕЛЕФОН + КОМПЬЮТЕР ДЕРЕКТЕРІН БІРІКТІРУ)
+db.ref("s7_global_database").on("value", (snapshot) => {
+    const data = snapshot.val();
+    if (data) {
+        appState.users = data.users || [];
+        appState.mentorRequests = data.mentorRequests || [];
+        appState.submissions = data.submissions || [];
+        if (data.lessons) appState.lessons = data.lessons;
+    }
+    checkSession();
+});
+
+function syncCloudData() {
+    db.ref("s7_global_database").set({
+        users: appState.users,
+        mentorRequests: appState.mentorRequests,
+        submissions: appState.submissions,
+        lessons: appState.lessons
+    });
 }
 
-window.onload = function() { checkSession(); };
+function saveData() {
+    localStorage.setItem("s7_current_user", JSON.stringify(appState.currentUser));
+    syncCloudData();
+}
 
 function checkSession() {
     const user = appState.currentUser;
@@ -68,14 +101,7 @@ function switchAuthMode(mode) {
     }
 }
 
-// Ментор таңдалғанда құпия код өрісін ашу/жабу
-function toggleMentorSecretInput() {
-    const role = document.getElementById("regRole").value;
-    const secretGroup = document.getElementById("mentorSecretGroup");
-    secretGroup.style.display = (role === "mentor") ? "block" : "none";
-}
-
-// 1. ТІРКЕЛУ (МЕНТОР ҚҰПИЯ КОДЫМЕН ТЕКСЕРУ)
+// 1. ТІРКЕЛУ (МЕНТОР КҰПИЯ СӨЗІ АЛЫП ТАСТАЛДЫ)
 function handleRegister(e) {
     e.preventDefault();
     const role = document.getElementById("regRole").value;
@@ -83,17 +109,8 @@ function handleRegister(e) {
     const email = document.getElementById("regEmail").value.trim().toLowerCase();
     const phone = document.getElementById("regPhone").value.trim();
     const password = document.getElementById("regPassword").value.trim();
-    const secretKey = document.getElementById("mentorSecretKey").value.trim();
 
-    // Егер Ментор таңдалса, құпия кодты тексеру
-    if (role === "mentor") {
-        if (secretKey !== MENTOR_SECRET_CODE) {
-            alert("❌ Ментордың арнайы құпия коды қате! (Әдепкі код: admin)");
-            return;
-        }
-    }
-
-    if (appState.users.some(u => u.email === email)) {
+    if (appState.users.some(u => u.email.toLowerCase() === email)) {
         alert("⚠️ Бұл email бұрын тіркелген!");
         return;
     }
@@ -102,16 +119,19 @@ function handleRegister(e) {
     appState.users.push(newUser);
     appState.currentUser = newUser;
     saveData();
-    alert("🎉 Тіркелу сәтті өтті!");
+    alert("🎉 Тіркелу сәтті өтті! Деректер бұлтқа сақталды.");
     checkSession();
 }
 
+// 2. АВТОРИЗАЦИЯ (КІРУ)
 function handleLogin(e) {
     e.preventDefault();
     const id = document.getElementById("loginIdentifier").value.trim().toLowerCase();
     const pass = document.getElementById("loginPassword").value.trim();
 
-    const user = appState.users.find(u => (u.email === id || u.phone === id) && u.password === pass);
+    const user = appState.users.find(u => 
+        (u.email.toLowerCase() === id || u.phone.trim() === id) && u.password === pass
+    );
 
     if (user) {
         appState.currentUser = user;
@@ -122,20 +142,27 @@ function handleLogin(e) {
     }
 }
 
-// 2. МЕНТОРҒА ЗАПРОС ЖІБЕРУ
+// 3. МЕНТОРҒА ЗАПРОС ЖІБЕРУ
 function sendMentorRequest(e) {
     e.preventDefault();
     const mentorEmail = document.getElementById("targetMentorEmail").value.trim().toLowerCase();
 
-    const mentor = appState.users.find(u => u.email === mentorEmail && u.role === 'mentor');
+    const mentor = appState.users.find(u => u.email.toLowerCase() === mentorEmail && u.role === 'mentor');
+
     if (!mentor) {
-        alert("❌ Бұл email бойынша Ментор табылмады!");
+        alert("❌ Бұл email бойынша Ментор табылмады! Ментордың тіркелгенін тексеріңіз.");
+        return;
+    }
+
+    const existingReq = appState.mentorRequests.find(r => r.studentEmail.toLowerCase() === appState.currentUser.email.toLowerCase());
+    if (existingReq) {
+        alert("⚠️ Сіз бұған дейін запрос жіберіп қойғансыз!");
         return;
     }
 
     appState.mentorRequests.push({
         id: Date.now(),
-        studentEmail: appState.currentUser.email,
+        studentEmail: appState.currentUser.email.toLowerCase(),
         studentName: appState.currentUser.name,
         mentorEmail: mentorEmail,
         status: "Күтілуде"
@@ -148,7 +175,7 @@ function sendMentorRequest(e) {
 
 function renderStudentMentorStatus() {
     const box = document.getElementById("mentorStatusBox");
-    const req = appState.mentorRequests.find(r => r.studentEmail === appState.currentUser.email);
+    const req = appState.mentorRequests.find(r => r.studentEmail.toLowerCase() === appState.currentUser.email.toLowerCase());
 
     if (appState.currentUser.mentorEmail) {
         box.innerHTML = `<p style="color: #22c55e;">✅ Менторыңыз: <strong>${appState.currentUser.mentorEmail}</strong></p>`;
@@ -157,12 +184,14 @@ function renderStudentMentorStatus() {
     }
 }
 
-// 3. МЕНТОР СТАРАНЫСЫНДА ЗАПРОСТЫ ҚАБЫЛДАУ
+// 4. МЕНТОР КАБИНЕТІНДЕ ЗАПРОСТАРДЫ КӨРСЕТУ
 function renderMentorRequests() {
     const list = document.getElementById("mentorRequestsList");
     list.innerHTML = "";
 
-    const myReqs = appState.mentorRequests.filter(r => r.mentorEmail === appState.currentUser.email && r.status === "Күтілуде");
+    const myReqs = appState.mentorRequests.filter(r => 
+        r.mentorEmail.toLowerCase() === appState.currentUser.email.toLowerCase() && r.status === "Күтілуде"
+    );
 
     if (myReqs.length === 0) {
         list.innerHTML = "<p style='color: #94a3b8;'>Жаңа запростар жоқ</p>";
@@ -184,15 +213,15 @@ function acceptStudent(studentEmail, reqId) {
     const req = appState.mentorRequests.find(r => r.id === reqId);
     if (req) req.status = "Қабылданды";
 
-    const student = appState.users.find(u => u.email === studentEmail);
-    if (student) student.mentorEmail = appState.currentUser.email;
+    const student = appState.users.find(u => u.email.toLowerCase() === studentEmail.toLowerCase());
+    if (student) student.mentorEmail = appState.currentUser.email.toLowerCase();
 
     saveData();
     renderMentorRequests();
     alert("✅ Студент сәтті қабылданды!");
 }
 
-// 4. СТРИК ЕСЕПТЕУ
+// 5. СТРИК ЖӘНЕ ШЫҒУ
 function updateStreak() {
     const today = new Date().toDateString();
     const lastLogin = appState.lastLoginDate;
@@ -206,16 +235,15 @@ function updateStreak() {
 
     appState.lastLoginDate = today;
     document.getElementById("streakCount").innerText = appState.streak;
-    saveData();
 }
 
 function logout() {
     appState.currentUser = null;
-    saveData();
+    localStorage.removeItem("s7_current_user");
     location.reload();
 }
 
-// 5. САБАҚТАР ЖӘНЕ МОДАЛЬ
+// 6. САБАҚТАРДЫ СУРЕТТЕУ
 function renderLessons() {
     const container = document.getElementById("lessonsContainer");
     container.innerHTML = "";
@@ -249,7 +277,9 @@ function openLessonModal(id) {
     document.getElementById("modalCode").innerText = lesson.code;
     document.getElementById("compilerConsole").style.display = "none";
 
-    const hasSubmitted = appState.submissions.some(s => s.studentEmail === appState.currentUser.email && s.lessonTitle === lesson.title);
+    const hasSubmitted = appState.submissions.some(s => 
+        s.studentEmail.toLowerCase() === appState.currentUser.email.toLowerCase() && s.lessonTitle === lesson.title
+    );
 
     const form = document.getElementById("submissionForm");
     const msg = document.getElementById("alreadySubmittedMsg");
@@ -291,8 +321,8 @@ function submitProject(e) {
     appState.submissions.push({
         id: Date.now(),
         studentName: appState.currentUser.name,
-        studentEmail: appState.currentUser.email,
-        mentorEmail: appState.currentUser.mentorEmail,
+        studentEmail: appState.currentUser.email.toLowerCase(),
+        mentorEmail: appState.currentUser.mentorEmail ? appState.currentUser.mentorEmail.toLowerCase() : null,
         lessonTitle: appState.currentLesson.title,
         code: document.getElementById("projectCode").value,
         media: document.getElementById("projectMedia").value,
@@ -304,12 +334,14 @@ function submitProject(e) {
     closeLessonModal();
 }
 
-// 6. МЕНТОР ТАБЛИЦАСЫ ЖӘНЕ КОДТЫ КӨРУ
+// 7. МЕНТОР ТАБЛИЦАСЫ ЖӘНЕ КОД КӨРУ
 function renderMentorTable() {
     const tbody = document.getElementById("mentorTableBody");
     tbody.innerHTML = "";
 
-    const subs = appState.submissions.filter(s => s.mentorEmail === appState.currentUser.email);
+    const subs = appState.submissions.filter(s => 
+        s.mentorEmail && s.mentorEmail.toLowerCase() === appState.currentUser.email.toLowerCase()
+    );
 
     subs.forEach(item => {
         const tr = document.createElement("tr");
