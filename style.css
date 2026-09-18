@@ -1,81 +1,228 @@
-* { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Nunito', sans-serif; }
-body { background-color: #f4f6f8; color: #333; }
-
-:root {
-    --duo-green: #58cc02;
-    --duo-green-shadow: #46a302;
-    --duo-blue: #1cb0f6;
-    --duo-blue-shadow: #1899d6;
-    --duo-gray: #e5e5e5;
-    --duo-gray-shadow: #cecece;
-    --duo-dark: #202b36;
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Nunito', sans-serif;
 }
 
-/* Auth Page Layout */
+body {
+    background-color: #0f172a;
+    color: #f8fafc;
+    min-height: 100vh;
+}
+
+/* Адаптив контейнер */
+.container {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 15px;
+}
+
 .auth-wrapper {
-    display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #eef2f5;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 15px;
 }
-.auth-card { width: 100%; max-width: 420px; background: white; padding: 2rem; border-radius: 20px; border: 2px solid var(--duo-gray); }
-.auth-card h2 { text-align: center; color: var(--duo-green); font-weight: 900; margin-bottom: 5px; }
-.auth-card h2 span { color: var(--duo-blue); }
-.subtitle { text-align: center; color: #777; margin-bottom: 1.5rem; font-size: 14px; }
 
-/* Form Components */
-.form-group { margin-bottom: 1.2rem; }
-.form-group label { display: block; font-weight: 700; margin-bottom: 6px; font-size: 14px; }
+.auth-card {
+    background: #1e293b;
+    padding: 25px;
+    border-radius: 16px;
+    width: 100%;
+    max-width: 450px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 600;
+    font-size: 14px;
+}
+
 .form-group input, .form-group select, .form-group textarea {
-    width: 100%; padding: 12px; border: 2px solid var(--duo-gray); border-radius: 12px; font-weight: 600; outline: none; font-size: 14px;
+    width: 100%;
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid #334155;
+    background: #0f172a;
+    color: #fff;
+    font-size: 15px;
 }
-.form-group input:focus { border-color: var(--duo-blue); }
 
-/* Navigation */
-.navbar { display: flex; justify-content: space-between; align-items: center; background: white; border-bottom: 2px solid var(--duo-gray); padding: 0.8rem 2rem; }
-.navbar-mentor { border-bottom: 4px solid var(--duo-blue); }
-.logo h2 { font-weight: 900; color: var(--duo-green); }
-.logo span { color: var(--duo-blue); }
-.duo-stats { display: flex; gap: 1.5rem; align-items: center; font-weight: 800; }
-.logout-btn { background: #ff4b4b; color: white; border: none; padding: 8px 14px; border-radius: 10px; cursor: pointer; font-weight: 800; }
+.duo-btn {
+    padding: 12px 20px;
+    border-radius: 12px;
+    border: none;
+    font-weight: 800;
+    cursor: pointer;
+    transition: 0.2s;
+    font-size: 15px;
+}
 
-/* Dashboard Layout */
-.container { max-width: 1000px; margin: 2rem auto; padding: 0 1rem; }
-.duo-layout { display: grid; grid-template-columns: 1fr 300px; gap: 2rem; }
-.duo-card { background: white; border: 2px solid var(--duo-gray); border-radius: 16px; padding: 1.5rem; margin-bottom: 1.5rem; }
-
-/* Map & Nodes */
-.lesson-map { display: flex; flex-direction: column; align-items: center; }
-.lessons-tree { display: flex; flex-direction: column; align-items: center; width: 100%; }
-.map-node { display: flex; flex-direction: column; align-items: center; }
-.node-btn { width: 70px; height: 70px; border-radius: 50%; border: none; font-size: 26px; color: white; cursor: pointer; }
-.duo-btn-green { background: var(--duo-green); box-shadow: 0 5px 0 var(--duo-green-shadow); }
-.duo-btn-primary { background: var(--duo-blue); box-shadow: 0 5px 0 var(--duo-blue-shadow); }
-.duo-btn-gray { background: var(--duo-gray); box-shadow: 0 5px 0 var(--duo-gray-shadow); color: #a5a5a5; }
-.map-connector { width: 8px; height: 30px; background: var(--duo-gray); margin: 4px 0; border-radius: 4px; }
-.map-connector.active { background: var(--duo-green); }
-.node-label { font-weight: 800; margin-top: 6px; font-size: 13px; }
-
-/* Table */
-.duo-table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
-.duo-table th, .duo-table td { padding: 12px; border-bottom: 2px solid var(--duo-gray); text-align: left; font-size: 14px; }
-
-/* AI Chat */
-.ai-chat-widget { position: fixed; bottom: 20px; right: 20px; z-index: 1000; }
-.ai-toggle-btn { background: var(--duo-blue); color: white; border: none; padding: 12px 20px; border-radius: 25px; font-weight: 800; cursor: pointer; }
-.ai-chat-window { display: none; flex-direction: column; width: 320px; height: 380px; background: white; border: 2px solid var(--duo-gray); border-radius: 16px; position: absolute; bottom: 55px; right: 0; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
-.ai-chat-header { background: var(--duo-blue); color: white; padding: 10px; font-weight: 800; display: flex; justify-content: space-between; }
-.ai-chat-body { flex: 1; padding: 10px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
-.chat-msg { padding: 8px 12px; border-radius: 10px; font-size: 12px; }
-.ai-msg { background: #e0f2fe; color: #0369a1; align-self: flex-start; }
-.user-msg { background: var(--duo-green); color: white; align-self: flex-end; }
-.ai-chat-footer { display: flex; padding: 8px; border-top: 1px solid var(--duo-gray); }
-.ai-chat-footer input { flex: 1; padding: 6px; border: 1px solid var(--duo-gray); border-radius: 6px; }
-.ai-chat-footer button { background: var(--duo-green); color: white; border: none; padding: 6px 10px; margin-left: 4px; border-radius: 6px; cursor: pointer; }
-
-/* Modal */
-.modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 2000; }
-.modal-content { width: 90%; max-width: 500px; position: relative; }
-.close-btn { position: absolute; top: 15px; right: 20px; font-size: 24px; cursor: pointer; font-weight: 800; }
-.code-box { background: #1e293b; color: #38bdf8; padding: 1rem; border-radius: 12px; margin: 1rem 0; max-height: 160px; overflow-y: auto; }
-.duo-btn { border: none; padding: 12px 20px; border-radius: 12px; font-weight: 800; color: white; cursor: pointer; }
+.duo-btn-green { background: #22c55e; color: #fff; }
+.duo-btn-primary { background: #3b82f6; color: #fff; }
+.duo-btn-gray { background: #334155; color: #94a3b8; }
 .w-100 { width: 100%; }
-.progress-bar-container { width: 100%; height: 12px; background: var(--duo-gray); border-radius: 10px; margin-top: 8px; overflow: hidden; }
-.progress-bar { height: 100%; background: var(--duo-green); }
+
+/* Навбар */
+.navbar {
+    background: #1e293b;
+    padding: 15px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.logo h2 { font-size: 20px; }
+.logo span { color: #22c55e; }
+
+.duo-stats {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.stat-item {
+    background: #0f172a;
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 14px;
+}
+
+/* Лейаут (Сетка) */
+.duo-layout {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.duo-card {
+    background: #1e293b;
+    padding: 20px;
+    border-radius: 16px;
+    margin-bottom: 20px;
+}
+
+/* Дәресләр картасы */
+.lessons-tree {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.map-node {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.node-btn {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    font-size: 26px;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 6px 0 rgba(0,0,0,0.2);
+}
+
+.node-label {
+    margin-top: 8px;
+    font-weight: 700;
+    font-size: 14px;
+    text-align: center;
+}
+
+.map-connector {
+    width: 4px;
+    height: 30px;
+    background: #334155;
+}
+.map-connector.active { background: #22c55e; }
+
+/* Таблица */
+.duo-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+.duo-table th, .duo-table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #334155;
+    font-size: 14px;
+}
+
+/* Модаль тәрәзә */
+.modal {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 15px;
+    z-index: 1000;
+}
+
+.modal-content {
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
+}
+
+.close-btn {
+    position: absolute;
+    top: 15px; right: 20px;
+    font-size: 24px;
+    cursor: pointer;
+}
+
+.code-box {
+    background: #0f172a;
+    padding: 12px;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin: 10px 0;
+    font-size: 13px;
+    color: #38bdf8;
+}
+
+/* МОБИЛЬ АДАПТАЦИЯ (ТЕЛЕФОН ЭЧӘН) */
+@media (max-width: 768px) {
+    .duo-layout {
+        grid-template-columns: 1fr; /* 1 колонка ясау */
+    }
+    
+    .navbar {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .duo-stats {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .duo-table {
+        display: block;
+        overflow-x: auto; /* Таблицаны горизонталь скролл ясау */
+    }
+}
