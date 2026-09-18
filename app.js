@@ -10,10 +10,11 @@ const defaultLessons = [
     { id: 8, title: "8. TDS Water Sensor", desc: "Су сапасын (TDS) өлшеу сенсоры.", icon: "💧", status: "locked", code: "void setup() { Serial.begin(9600); }\nvoid loop() {\n  int val = analogRead(A0);\n  Serial.print(\"TDS Value: \"); Serial.println(val);\n  delay(1000);\n}" }
 ];
 
-let appState = JSON.parse(localStorage.getItem("s7_lms_db_v8")) || {
+// База нұсқасын v9-ға жаңартып, 8 сабақтың бәрін қамтамасыз етеміз
+let appState = JSON.parse(localStorage.getItem("s7_lms_db_v9")) || {
     users: [],          
     currentUser: null,  
-    mentorRequests: [], // Менторға жіберілген запрос тізімі
+    mentorRequests: [], 
     streak: 1,
     lastLoginDate: null,
     xp: 0,
@@ -21,8 +22,13 @@ let appState = JSON.parse(localStorage.getItem("s7_lms_db_v8")) || {
     submissions: []
 };
 
+// Бұрынғы сабақтар 3 болып қалған болса, 8 сабаққа толтыру
+if (!appState.lessons || appState.lessons.length < 8) {
+    appState.lessons = defaultLessons;
+}
+
 function saveData() {
-    localStorage.setItem("s7_lms_db_v8", JSON.stringify(appState));
+    localStorage.setItem("s7_lms_db_v9", JSON.stringify(appState));
 }
 
 window.onload = function() { checkSession(); };
@@ -102,7 +108,7 @@ function handleLogin(e) {
     }
 }
 
-// 2. СТУДЕНТ СТАРАНЫСЫНАН МЕНТОРҒА ЗАПРОС ЖІБЕРУ
+// 2. МЕНТОРҒА ЗАПРОС ЖІБЕРУ
 function sendMentorRequest(e) {
     e.preventDefault();
     const mentorEmail = document.getElementById("targetMentorEmail").value.trim().toLowerCase();
@@ -131,13 +137,13 @@ function renderStudentMentorStatus() {
     const req = appState.mentorRequests.find(r => r.studentEmail === appState.currentUser.email);
 
     if (appState.currentUser.mentorEmail) {
-        box.innerHTML = `<p style="color: #22c55e;">✅ Сіздің Менторыңыз: <strong>${appState.currentUser.mentorEmail}</strong></p>`;
+        box.innerHTML = `<p style="color: #22c55e;">✅ Менторыңыз: <strong>${appState.currentUser.mentorEmail}</strong></p>`;
     } else if (req) {
         box.innerHTML = `<p style="color: #f59e0b;">⏳ Запрос жіберілді (${req.mentorEmail}). Ментордың қабылдауын күтіңіз.</p>`;
     }
 }
 
-// 3. МЕНТОР СТАРАНЫСЫНДА ЗАПРОСТЫ КАЗАХША ҚАБЫЛДАУ
+// 3. МЕНТОР СТАРАНЫСЫНДА ЗАПРОСТЫ ҚАБЫЛДАУ
 function renderMentorRequests() {
     const list = document.getElementById("mentorRequestsList");
     list.innerHTML = "";
@@ -195,7 +201,7 @@ function logout() {
     location.reload();
 }
 
-// 5. САБАҚТАР ЖӘНЕ COMPILER
+// 5. САБАҚТАР ЖӘНЕ МОДАЛЬ
 function renderLessons() {
     const container = document.getElementById("lessonsContainer");
     container.innerHTML = "";
@@ -228,6 +234,22 @@ function openLessonModal(id) {
     document.getElementById("modalDesc").innerText = lesson.desc;
     document.getElementById("modalCode").innerText = lesson.code;
     document.getElementById("compilerConsole").style.display = "none";
+
+    // Тексеру: Бұл студент сабаққа жауап жіберіп қойған ба?
+    const hasSubmitted = appState.submissions.some(s => s.studentEmail === appState.currentUser.email && s.lessonTitle === lesson.title);
+
+    const form = document.getElementById("submissionForm");
+    const msg = document.getElementById("alreadySubmittedMsg");
+
+    if (hasSubmitted) {
+        form.style.display = "none";
+        msg.style.display = "block";
+    } else {
+        form.style.display = "block";
+        msg.style.display = "none";
+        document.getElementById("submissionForm").reset();
+    }
+
     document.getElementById("lessonModal").style.display = "flex";
 }
 
@@ -252,6 +274,7 @@ function testCodeRun() {
 
 function submitProject(e) {
     e.preventDefault();
+
     appState.submissions.push({
         id: Date.now(),
         studentName: appState.currentUser.name,
@@ -268,11 +291,11 @@ function submitProject(e) {
     closeLessonModal();
 }
 
+// 6. МЕНТОР ТАБЛИЦАСЫ ЖӘНЕ КОДТЫ МOДАЛЬМЕН КӨРУ
 function renderMentorTable() {
     const tbody = document.getElementById("mentorTableBody");
     tbody.innerHTML = "";
 
-    // Тек осы менторға бәйлеген укучыларның тапсырмалары
     const subs = appState.submissions.filter(s => s.mentorEmail === appState.currentUser.email);
 
     subs.forEach(item => {
@@ -281,11 +304,26 @@ function renderMentorTable() {
             <td><strong>${item.studentName}</strong></td>
             <td>${item.lessonTitle}</td>
             <td><a href="${item.media}" target="_blank" style="color: #38bdf8;">Wokwi</a></td>
-            <td><button class="duo-btn duo-btn-primary" style="padding: 4px 8px; font-size: 12px;" onclick="alert('${item.code}')">Код</button></td>
-            <td>${item.status === 'Күтілуде' ? `<button class="duo-btn duo-btn-green" style="padding: 4px 8px; font-size: 12px;" onclick="approveSub(${item.id})">Қабылдау</button>` : '✅'}</td>
+            <td><button class="duo-btn duo-btn-primary" style="padding: 4px 8px; font-size: 12px;" onclick="viewStudentCode('${item.studentName}', '${item.lessonTitle}', ${item.id})">📄 Кодты көру</button></td>
+            <td>${item.status === 'Күтілуде' ? `<button class="duo-btn duo-btn-green" style="padding: 4px 8px; font-size: 12px;" onclick="approveSub(${item.id})">Қабылдау</button>` : '✅ Қабылданды'}</td>
         `;
         tbody.appendChild(tr);
     });
+}
+
+// Менторға студенттің кодын модальда ашып көрсету
+function viewStudentCode(name, lesson, id) {
+    const sub = appState.submissions.find(s => s.id === id);
+    if (sub) {
+        document.getElementById("codeModalStudentName").innerText = "👨‍🎓 " + name;
+        document.getElementById("codeModalLessonTitle").innerText = "📌 " + lesson;
+        document.getElementById("codeModalContent").innerText = sub.code;
+        document.getElementById("viewCodeModal").style.display = "flex";
+    }
+}
+
+function closeViewCodeModal() {
+    document.getElementById("viewCodeModal").style.display = "none";
 }
 
 function approveSub(id) {
