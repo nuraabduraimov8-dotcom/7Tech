@@ -6,17 +6,23 @@
     <title>S7 Robotics — LMS Platform</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <!-- EmailJS скрипті (Почтаға код жіберу үшін) -->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <script type="text/javascript">
+        (function(){
+            emailjs.init("YOUR_PUBLIC_KEY"); // Осы жерге EmailJS Public Key қойылады
+        })();
+    </script>
 </head>
 <body>
 
-    <!-- 1. АВТОРИЗАЦИЯ ЖӘНЕ ТІРКЕЛУ ЭКРАНЫ -->
+    <!-- 1. ТІРКЕЛУ ЖӘНЕ ПОЧТАҒА КОД ЖІБЕРУ ЭКРАНЫ -->
     <div id="authContainer" class="auth-wrapper">
         <div class="auth-card duo-card">
             <h2>S7 <span>ROBOTICS</span></h2>
-            <p class="subtitle" id="authSubtitle">Платформаға кіру немесе тіркелу</p>
+            <p class="subtitle">Платформаға кіру үшін деректеріңізді енгізіңіз</p>
 
-            <!-- Тіркелу / Кіру формасы -->
-            <form id="authForm" onsubmit="handleAuthSubmit(event)">
+            <form id="authForm" onsubmit="handleSendCode(event)">
                 <div class="form-group">
                     <label>Рөлді таңдаңыз:</label>
                     <select id="authRole" onchange="toggleMentorPasswordInput()" required>
@@ -40,27 +46,34 @@
                     <input type="tel" id="authPhone" placeholder="+7 707 123 4567" required>
                 </div>
 
-                <!-- Ментор үшін ғана шығатын пароль өрісі -->
                 <div class="form-group" id="mentorPasswordGroup" style="display: none;">
-                    <label>🔒 Ментор паролі (Құпия):</label>
-                    <input type="password" id="mentorPassword" placeholder="Пароль жазыңыз">
+                    <label>🔒 Ментор құпия сөзі:</label>
+                    <input type="password" id="mentorPassword" placeholder="Құпия сөзді енгізіңіз">
                 </div>
 
-                <button type="submit" class="duo-btn duo-btn-green w-100">Код алу 📩</button>
-            </form>
-
-            <!-- СМС / Email Код растау формасы (Бастапқыда жасырын) -->
-            <form id="verifyForm" style="display: none;" onsubmit="handleVerifySubmit(event)">
-                <div class="form-group">
-                    <label>Енгізілген нөмірге/почтаға келген 4 таңбалы кодты жазыңыз:</label>
-                    <input type="text" id="verifyCode" maxlength="4" placeholder="X X X X" required style="text-align: center; font-size: 24px; letter-spacing: 5px;">
-                </div>
-                <button type="submit" class="duo-btn duo-btn-primary w-100">Растау және Кіру 🚀</button>
+                <button type="submit" id="sendCodeBtn" class="duo-btn duo-btn-green w-100">Почтаға код жіберу 📩</button>
             </form>
         </div>
     </div>
 
-    <!-- 2. СТУДЕНТ КИНЕТІ (ЖҰМЫС ЭКРАНЫ) -->
+    <!-- 2. ПОЧТАҒА КЕЛГЕН КОДТЫ ТЕКСЕРУ ЭКРАНЫ (ЖАҢА ОКНО) -->
+    <div id="verifyContainer" class="auth-wrapper" style="display: none;">
+        <div class="auth-card duo-card" style="text-align: center;">
+            <h2>📩 Кодты растау</h2>
+            <p class="subtitle"><strong id="userEmailDisplay"></strong> почтаңызға 4 таңбалы растау коды жіберілді. Сонда келген кодты жазыңыз:</p>
+
+            <form id="verifyForm" onsubmit="handleVerifySubmit(event)">
+                <div class="form-group">
+                    <input type="text" id="verifyCode" maxlength="4" placeholder="X X X X" required style="text-align: center; font-size: 28px; letter-spacing: 8px; font-weight: bold;">
+                </div>
+                <button type="submit" class="duo-btn duo-btn-primary w-100">Кодты тексеру және Кіру 🚀</button>
+            </form>
+
+            <button class="duo-btn duo-btn-gray w-100" style="margin-top: 10px;" onclick="backToAuth()">Қайта оралу ↩️</button>
+        </div>
+    </div>
+
+    <!-- 3. СТУДЕНТ КАБИНЕТІ -->
     <div id="studentApp" style="display: none;">
         <header class="navbar">
             <div class="logo">
@@ -92,27 +105,9 @@
                 </div>
             </div>
         </div>
-
-        <!-- AI CHAT WIDGET -->
-        <div class="ai-chat-widget">
-            <button class="ai-toggle-btn" onclick="toggleAIChat()">🤖 ИИ Подсказка</button>
-            <div class="ai-chat-window" id="aiChatWindow">
-                <div class="ai-chat-header">
-                    <span>🤖 AI Robotics Mentor</span>
-                    <span class="close-chat" onclick="toggleAIChat()">&times;</span>
-                </div>
-                <div class="ai-chat-body" id="aiChatBody">
-                    <div class="chat-msg ai-msg">Сәлем! Код жазу бойынша сұрағың болса, қоя бер! 😊</div>
-                </div>
-                <div class="ai-chat-footer">
-                    <input type="text" id="aiInput" placeholder="Сұрақты жаз..." onkeypress="handleAIPress(event)">
-                    <button onclick="sendAIMessage()">Жіберу</button>
-                </div>
-            </div>
-        </div>
     </div>
 
-    <!-- 3. МЕНТОР КАБИНЕТІ (БӨЛЕК РАБОЧИЙ ЭКРАН) -->
+    <!-- 4. МЕНТОР КАБИНЕТІ -->
     <div id="mentorApp" style="display: none;">
         <header class="navbar navbar-mentor">
             <div class="logo">
@@ -145,33 +140,34 @@
         </div>
     </div>
 
-    <!-- LESSON SUBMIT MODAL (Студент үшін) -->
+    <!-- САБАҚ ТЕРЕЗЕСІ ЖӘНЕ КОД ТЕКСЕРУ (COMPILER) -->
     <div id="lessonModal" class="modal">
-        <div class="modal-content duo-card">
+        <div class="modal-content duo-card" style="max-width: 650px;">
             <span class="close-btn" onclick="closeLessonModal()">&times;</span>
             <h2 id="modalTitle">Сабақ</h2>
-            <p id="modalDesc" class="subtitle"></p>
+            <p id="modalDesc" class="subtitle" style="text-align: left;"></p>
+            
+            <label><strong>📌 Үлгі код:</strong></label>
             <div class="code-box"><pre><code id="modalCode"></code></pre></div>
+
             <form id="submissionForm" onsubmit="submitProject(event)">
                 <div class="form-group">
-                    <label>📝 Жоба коды / Скрипт жазыңыз:</label>
-                    <textarea id="projectCode" rows="5" required placeholder="C++ / Arduino кодын осы жерге қойыңыз..."></textarea>
+                    <label>💻 Өз кодыңызды жазыңыз және тексеріңіз:</label>
+                    <textarea id="projectCode" rows="6" style="font-family: monospace; background: #0f172a; color: #38bdf8; padding: 10px;" required placeholder="C++ / Arduino кодын осы жерге жазыңыз..."></textarea>
                 </div>
-                <div class="form-group">
-                    <label>🔗 Жоба сілтемесі (Tinkercad / Wokwi / Drive):</label>
-                    <input type="url" id="projectMedia" required placeholder="https://">
-                </div>
-                <button type="submit" class="duo-btn duo-btn-green w-100">Тексеруге жіберу (+50 XP) 🚀</button>
-            </form>
-        </div>
-    </div>
 
-    <!-- MENTOR CODE VIEW MODAL (Ментор үшін) -->
-    <div id="mentorCodeModal" class="modal">
-        <div class="modal-content duo-card">
-            <span class="close-btn" onclick="closeMentorCodeModal()">&times;</span>
-            <h2>💻 Оқушының жіберген коды:</h2>
-            <div class="code-box"><pre><code id="mentorCodeContent"></code></pre></div>
+                <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                    <button type="button" class="duo-btn duo-btn-primary" onclick="testCodeRun()" style="flex: 1;">⚡ Кодты синтаксиске тексеру</button>
+                </div>
+                <div id="compilerConsole" style="display: none; padding: 10px; border-radius: 8px; font-size: 13px; font-family: monospace; margin-bottom: 15px;"></div>
+
+                <div class="form-group">
+                    <label>🔗 Жоба симуляциясының сілтемесі (Wokwi / Tinkercad):</label>
+                    <input type="url" id="projectMedia" required placeholder="https://wokwi.com/projects/...">
+                </div>
+
+                <button type="submit" id="submitBtn" class="duo-btn duo-btn-green w-100">Менторға жіберу (+50 XP) 🚀</button>
+            </form>
         </div>
     </div>
 
