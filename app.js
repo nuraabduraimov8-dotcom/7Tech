@@ -1,35 +1,20 @@
-// 🔥 FIREBASE БАПТАУЫ (Өз кілттеріңізді осында жазасыз)
-const firebaseConfig = {
-    apiKey: "YOUR_API_KEY",
-    authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-    databaseURL: "https://data-base-c0657-default-rtdb.firebaseio.com",
-    projectId: "data-base-c0657",
-    storageBucket: "data-base-c0657.appspot.com",
-    messagingSenderId: "YOUR_SENDER_ID",
-    appId: "YOUR_APP_ID"
-};
-
-// Firebase іске қосу
-if (!firebase.apps.length) {
-    firebase.initializeApp(firebaseConfig);
-}
-const db = firebase.database();
-
-// Бастапқы сабақтар тізімі
+// 8 ТОЛЫҚ САБАҚ ТІЗІМІ
 const defaultLessons = [
     { id: 1, title: "1. LED Blink", desc: "13-пиндегі диодты жыпылықтату.", icon: "💡", status: "active", code: "void setup() {\n  pinMode(13, OUTPUT);\n}\nvoid loop() {\n  digitalWrite(13, HIGH);\n  delay(1000);\n  digitalWrite(13, LOW);\n  delay(1000);\n}" },
     { id: 2, title: "2. Button & LED", desc: "Батырма арқылы диодты қосу.", icon: "🔘", status: "locked", code: "int btn = 2, led = 13;\nvoid setup() {\n  pinMode(led, OUTPUT);\n  pinMode(btn, INPUT);\n}\nvoid loop() {\n  if(digitalRead(btn) == HIGH) digitalWrite(led, HIGH);\n  else digitalWrite(led, LOW);\n}" },
     { id: 3, title: "3. Potentiometer PWM", desc: "Аналогты сигналмен LED жарықтығын реттеу.", icon: "🎛️", status: "locked", code: "void setup() { pinMode(9, OUTPUT); }\nvoid loop() { analogWrite(9, analogRead(A0)/4); }" },
     { id: 4, title: "4. Servo Motor Control", desc: "Сервомоторды 0-ден 180 градусқа бұру.", icon: "🦾", status: "locked", code: "#include <Servo.h>\nServo myservo;\nvoid setup() { myservo.attach(9); }\nvoid loop() { myservo.write(90); delay(1000); myservo.write(0); delay(1000); }" },
-    { id: 5, title: "5. Ultrasonic Sensor HC-SR04", desc: "Ультрадыбыс сенсорымен қашықтықты өлшеу.", icon: "📏", status: "locked", code: "int trig=9, echo=10;\nvoid setup() {\n  pinMode(trig, OUTPUT); pinMode(echo, INPUT);\n  Serial.begin(9600);\n}\nvoid loop() {\n  digitalWrite(trig, LOW); delayMicroseconds(2);\n  digitalWrite(trig, HIGH); delayMicroseconds(10);\n  digitalWrite(trig, LOW);\n  long duration = pulseIn(echo, HIGH);\n  int distance = duration * 0.034 / 2;\n  Serial.println(distance);\n  delay(500);\n}" },
+    { id: 5, title: "5. Ultrasonic Sensor HC-SR04", desc: "Ультратавыш сенсорымен қашықтықты өлшеу.", icon: "📏", status: "locked", code: "int trig=9, echo=10;\nvoid setup() {\n  pinMode(trig, OUTPUT); pinMode(echo, INPUT);\n  Serial.begin(9600);\n}\nvoid loop() {\n  digitalWrite(trig, LOW); delayMicroseconds(2);\n  digitalWrite(trig, HIGH); delayMicroseconds(10);\n  digitalWrite(trig, LOW);\n  long duration = pulseIn(echo, HIGH);\n  int distance = duration * 0.034 / 2;\n  Serial.println(distance);\n  delay(500);\n}" },
     { id: 6, title: "6. LCD 1602 Display", desc: "LCD экранға текст шығару.", icon: "🖥️", status: "locked", code: "#include <LiquidCrystal_I2C.h>\nLiquidCrystal_I2C lcd(0x27,16,2);\nvoid setup() {\n  lcd.init(); lcd.backlight();\n  lcd.print(\"S7 Robotics!\");\n}\nvoid loop() {}" },
     { id: 7, title: "7. MQ-2 Gas Sensor", desc: "Газ сенсоры арқылы қауіпті анықтау.", icon: "🚨", status: "locked", code: "int gasPin = A0, buzzer = 8;\nvoid setup() { pinMode(buzzer, OUTPUT); }\nvoid loop() {\n  if(analogRead(gasPin) > 400) tone(buzzer, 1000);\n  else noTone(buzzer);\n}" },
     { id: 8, title: "8. TDS Water Sensor", desc: "Су сапасын (TDS) өлшеу сенсоры.", icon: "💧", status: "locked", code: "void setup() { Serial.begin(9600); }\nvoid loop() {\n  int val = analogRead(A0);\n  Serial.print(\"TDS Value: \"); Serial.println(val);\n  delay(1000);\n}" }
 ];
 
-let appState = {
+// База нұсқасын v11-ге жаңартамыз
+let appState = JSON.parse(localStorage.getItem("s7_lms_db_v11")) || {
     users: [],          
-    currentUser: JSON.parse(localStorage.getItem("s7_current_user")) || null,  
+    currentUser: null,  
+    mentorRequests: [], 
     streak: 1,
     lastLoginDate: null,
     xp: 0,
@@ -37,157 +22,174 @@ let appState = {
     submissions: []
 };
 
-// 🔄 FIREBASE-ПЕН НАҚТЫ УАҚЫТТА СИНХРОНИЗАЦИЯ
-db.ref("s7_global_database").on("value", (snapshot) => {
-    const data = snapshot.val();
-    if (data) {
-        appState.users = Array.isArray(data.users) ? data.users : (data.users ? Object.values(data.users) : []);
-        appState.submissions = Array.isArray(data.submissions) ? data.submissions : (data.submissions ? Object.values(data.submissions) : []);
-        if (data.lessons) appState.lessons = data.lessons;
-    }
-    checkSession();
-});
-
-function syncCloudData() {
-    return db.ref("s7_global_database").set({
-        users: appState.users,
-        submissions: appState.submissions,
-        lessons: appState.lessons
-    });
-}
-
 function saveData() {
-    localStorage.setItem("s7_current_user", JSON.stringify(appState.currentUser));
-    return syncCloudData();
+    localStorage.setItem("s7_lms_db_v11", JSON.stringify(appState));
 }
+
+window.onload = function() { checkSession(); };
 
 function checkSession() {
     const user = appState.currentUser;
-    const authContainer = document.getElementById("authContainer");
-    const studentApp = document.getElementById("studentApp");
-    const mentorApp = document.getElementById("mentorApp");
-
-    if (authContainer) authContainer.style.display = "none";
-    if (studentApp) studentApp.style.display = "none";
-    if (mentorApp) mentorApp.style.display = "none";
+    document.getElementById("authContainer").style.display = "none";
+    document.getElementById("studentApp").style.display = "none";
+    document.getElementById("mentorApp").style.display = "none";
 
     if (!user) {
-        if (authContainer) authContainer.style.display = "flex";
+        document.getElementById("authContainer").style.display = "flex";
     } else if (user.role === "student") {
         updateStreak();
-        if (studentApp) studentApp.style.display = "block";
-        const nameDisp = document.getElementById("studentNameDisplay");
-        const xpDisp = document.getElementById("xpCount");
-        if (nameDisp) nameDisp.innerText = user.name;
-        if (xpDisp) xpDisp.innerText = appState.xp;
+        document.getElementById("studentApp").style.display = "block";
+        document.getElementById("studentNameDisplay").innerText = user.name;
+        document.getElementById("xpCount").innerText = appState.xp;
         renderLessons();
+        renderStudentMentorStatus();
     } else if (user.role === "mentor") {
-        if (mentorApp) mentorApp.style.display = "block";
-        const mentorNameDisp = document.getElementById("mentorNameDisplay");
-        if (mentorNameDisp) mentorNameDisp.innerText = user.name;
+        document.getElementById("mentorApp").style.display = "block";
+        document.getElementById("mentorNameDisplay").innerText = user.name;
+        renderMentorRequests();
         renderMentorTable();
     }
 }
 
 function switchAuthMode(mode) {
-    const loginForm = document.getElementById("loginForm");
-    const regForm = document.getElementById("regForm");
-    const loginTabBtn = document.getElementById("loginTabBtn");
-    const regTabBtn = document.getElementById("regTabBtn");
-
     if (mode === 'login') {
-        if (loginForm) loginForm.style.display = "block";
-        if (regForm) regForm.style.display = "none";
-        if (loginTabBtn) loginTabBtn.className = "duo-btn duo-btn-primary";
-        if (regTabBtn) regTabBtn.className = "duo-btn duo-btn-gray";
+        document.getElementById("loginForm").style.display = "block";
+        document.getElementById("regForm").style.display = "none";
+        document.getElementById("loginTabBtn").className = "duo-btn duo-btn-primary";
+        document.getElementById("regTabBtn").className = "duo-btn duo-btn-gray";
     } else {
-        if (loginForm) loginForm.style.display = "none";
-        if (regForm) regForm.style.display = "block";
-        if (loginTabBtn) loginTabBtn.className = "duo-btn duo-btn-gray";
-        if (regTabBtn) regTabBtn.className = "duo-btn duo-btn-primary";
+        document.getElementById("loginForm").style.display = "none";
+        document.getElementById("regForm").style.display = "block";
+        document.getElementById("loginTabBtn").className = "duo-btn duo-btn-gray";
+        document.getElementById("regTabBtn").className = "duo-btn duo-btn-primary";
     }
 }
 
-// 1. ТІРКЕЛУ (ҚАТЕЛЕР ЖОЙЫЛДЫ, АСИНХРОНДЫ ТҮРДЕ ЖҰМЫС ІСТЕЙДІ)
-async function handleRegister(e) {
+// 1. ТІРКЕЛУ
+function handleRegister(e) {
     e.preventDefault();
-    
-    const roleElem = document.getElementById("regRole");
-    const nameElem = document.getElementById("regName");
-    const emailElem = document.getElementById("regEmail");
-    const phoneElem = document.getElementById("regPhone");
-    const passElem = document.getElementById("regPassword");
+    const role = document.getElementById("regRole").value;
+    const name = document.getElementById("regName").value.trim();
+    const email = document.getElementById("regEmail").value.trim().toLowerCase();
+    const phone = document.getElementById("regPhone").value.trim();
+    const password = document.getElementById("regPassword").value.trim();
 
-    if (!roleElem || !nameElem || !emailElem || !passElem) {
-        alert("⚠️ Форма элементтері толық табылмады!");
+    // Егер мұндай email бар болса
+    if (appState.users.some(u => u.email.toLowerCase() === email)) {
+        alert("⚠️ Бұл email бұрын тіркелген!");
         return;
     }
 
-    const role = roleElem.value;
-    const name = nameElem.value.trim();
-    const email = emailElem.value.trim().toLowerCase();
-    const phone = phoneElem ? phoneElem.value.trim().replace(/\s+/g, '') : "";
-    const password = passElem.value.trim();
-
-    // Firebase-тен ең соңғы деректерді алу
-    const snapshot = await db.ref("s7_global_database/users").once("value");
-    const rawData = snapshot.val();
-    let currentUsers = Array.isArray(rawData) ? rawData : (rawData ? Object.values(rawData) : []);
-
-    const emailExists = currentUsers.some(u => u && (u.email || "").toLowerCase() === email);
-    const phoneExists = phone ? currentUsers.some(u => u && (u.phone || "").replace(/\s+/g, '') === phone) : false;
-
-    if (emailExists) {
-        alert("⚠️ Бұл email арқылы аккаунт бұрын тіркелген!");
-        return;
-    }
-    
-    if (phoneExists) {
-        alert("⚠️ Бұл телефон нөмірі арқылы аккаунт бұрын тіркелген!");
-        return;
-    }
-
-    const newUser = { role, name, email, phone, password };
-    appState.users = [...currentUsers, newUser];
+    const newUser = { role, name, email, phone, password, mentorEmail: null };
+    appState.users.push(newUser);
     appState.currentUser = newUser;
-    
-    await saveData();
+    saveData();
     alert("🎉 Тіркелу сәтті өтті!");
     checkSession();
 }
 
-// 2. КІРУ (АВТОРИЗАЦИЯ)
-async function handleLogin(e) {
+// 2. АВТОРИЗАЦИЯ (КІРУ)
+function handleLogin(e) {
     e.preventDefault();
-    const identifierElem = document.getElementById("loginIdentifier");
-    const passElem = document.getElementById("loginPassword");
+    const id = document.getElementById("loginIdentifier").value.trim().toLowerCase();
+    const pass = document.getElementById("loginPassword").value.trim();
 
-    if (!identifierElem || !passElem) return;
-
-    const id = identifierElem.value.trim().toLowerCase().replace(/\s+/g, '');
-    const pass = passElem.value.trim();
-
-    const snapshot = await db.ref("s7_global_database/users").once("value");
-    const rawData = snapshot.val();
-    const dbUsers = Array.isArray(rawData) ? rawData : (rawData ? Object.values(rawData) : []);
-
-    const user = dbUsers.find(u => {
-        if (!u) return false;
-        const uEmail = (u.email || "").toLowerCase();
-        const uPhone = (u.phone || "").replace(/\s+/g, '');
-        return (uEmail === id || uPhone === id) && u.password === pass;
-    });
+    // Телефон немесе Email арқылы толық дәл іздеу
+    const user = appState.users.find(u => 
+        (u.email.toLowerCase() === id || u.phone.trim() === id) && u.password === pass
+    );
 
     if (user) {
         appState.currentUser = user;
-        localStorage.setItem("s7_current_user", JSON.stringify(user));
+        saveData();
         checkSession();
     } else {
         alert("❌ Логин немесе пароль қате!");
     }
 }
 
-// 3. СТРИК ЖӘНЕ ШЫҒУ
+// 3. МЕНТОРҒА ЗАПРОС ЖІБЕРУ (ДӘЛ ІЗДЕУ ТҮЗЕТІЛДІ)
+function sendMentorRequest(e) {
+    e.preventDefault();
+    const mentorEmail = document.getElementById("targetMentorEmail").value.trim().toLowerCase();
+
+    // Электронды поштаны кіші әріптермен толық іздеу
+    const mentor = appState.users.find(u => u.email.toLowerCase() === mentorEmail && u.role === 'mentor');
+
+    if (!mentor) {
+        alert("❌ Бұл email бойынша Ментор табылмады! Email-дың дұрыс жазылғанын және оның Ментор екенін тексеріңіз.");
+        return;
+    }
+
+    // Қайталап запрос жібермеуін тексеру
+    const existingReq = appState.mentorRequests.find(r => r.studentEmail.toLowerCase() === appState.currentUser.email.toLowerCase());
+    if (existingReq) {
+        alert("⚠️ Сіз бұған дейін запрос жіберіп қойғансыз!");
+        return;
+    }
+
+    appState.mentorRequests.push({
+        id: Date.now(),
+        studentEmail: appState.currentUser.email.toLowerCase(),
+        studentName: appState.currentUser.name,
+        mentorEmail: mentorEmail,
+        status: "Күтілуде"
+    });
+
+    saveData();
+    alert("📩 Менторға запрос жіберілді!");
+    renderStudentMentorStatus();
+}
+
+function renderStudentMentorStatus() {
+    const box = document.getElementById("mentorStatusBox");
+    const req = appState.mentorRequests.find(r => r.studentEmail.toLowerCase() === appState.currentUser.email.toLowerCase());
+
+    if (appState.currentUser.mentorEmail) {
+        box.innerHTML = `<p style="color: #22c55e;">✅ Менторыңыз: <strong>${appState.currentUser.mentorEmail}</strong></p>`;
+    } else if (req) {
+        box.innerHTML = `<p style="color: #f59e0b;">⏳ Запрос жіберілді (${req.mentorEmail}). Ментордың қабылдауын күтіңіз.</p>`;
+    }
+}
+
+// 4. МЕНТОР КАБИНЕТІНДЕ ЗАПРОСТАРДЫ КӨРСЕТУ ЖӘНЕ ҚАБЫЛДАУ
+function renderMentorRequests() {
+    const list = document.getElementById("mentorRequestsList");
+    list.innerHTML = "";
+
+    const myReqs = appState.mentorRequests.filter(r => 
+        r.mentorEmail.toLowerCase() === appState.currentUser.email.toLowerCase() && r.status === "Күтілуде"
+    );
+
+    if (myReqs.length === 0) {
+        list.innerHTML = "<p style='color: #94a3b8;'>Жаңа запростар жоқ</p>";
+        return;
+    }
+
+    myReqs.forEach(r => {
+        const item = document.createElement("div");
+        item.style = "display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; background: #0f172a; padding: 10px; border-radius: 8px;";
+        item.innerHTML = `
+            <span>👨‍🎓 <strong>${r.studentName}</strong> (${r.studentEmail})</span>
+            <button class="duo-btn duo-btn-green" style="padding: 5px 10px; font-size: 12px;" onclick="acceptStudent('${r.studentEmail}', ${r.id})">Қабылдау ✅</button>
+        `;
+        list.appendChild(item);
+    });
+}
+
+function acceptStudent(studentEmail, reqId) {
+    const req = appState.mentorRequests.find(r => r.id === reqId);
+    if (req) req.status = "Қабылданды";
+
+    const student = appState.users.find(u => u.email.toLowerCase() === studentEmail.toLowerCase());
+    if (student) student.mentorEmail = appState.currentUser.email.toLowerCase();
+
+    saveData();
+    renderMentorRequests();
+    alert("✅ Студент сәтті қабылданды!");
+}
+
+// 5. СТРИК ЖӘНЕ ШЫҒУ
 function updateStreak() {
     const today = new Date().toDateString();
     const lastLogin = appState.lastLoginDate;
@@ -200,20 +202,19 @@ function updateStreak() {
     }
 
     appState.lastLoginDate = today;
-    const streakElem = document.getElementById("streakCount");
-    if (streakElem) streakElem.innerText = appState.streak;
+    document.getElementById("streakCount").innerText = appState.streak;
+    saveData();
 }
 
 function logout() {
     appState.currentUser = null;
-    localStorage.removeItem("s7_current_user");
+    saveData();
     location.reload();
 }
 
-// 4. САБАҚТАР ЖӘНЕ ТАПСЫРМА ЖІБЕРУ
+// 6. САБАҚТАРДЫ СУРЕТТЕУ
 function renderLessons() {
     const container = document.getElementById("lessonsContainer");
-    if (!container) return;
     container.innerHTML = "";
 
     appState.lessons.forEach((lesson, index) => {
@@ -239,46 +240,36 @@ function renderLessons() {
 
 function openLessonModal(id) {
     const lesson = appState.lessons.find(l => l.id === id);
-    if (!lesson) return;
     appState.currentLesson = lesson;
-    
     document.getElementById("modalTitle").innerText = lesson.title;
     document.getElementById("modalDesc").innerText = lesson.desc;
     document.getElementById("modalCode").innerText = lesson.code;
     document.getElementById("compilerConsole").style.display = "none";
 
     const hasSubmitted = appState.submissions.some(s => 
-        s && s.studentEmail && appState.currentUser && s.studentEmail.toLowerCase() === appState.currentUser.email.toLowerCase() && s.lessonTitle === lesson.title
+        s.studentEmail.toLowerCase() === appState.currentUser.email.toLowerCase() && s.lessonTitle === lesson.title
     );
 
     const form = document.getElementById("submissionForm");
     const msg = document.getElementById("alreadySubmittedMsg");
 
     if (hasSubmitted) {
-        if (form) form.style.display = "none";
-        if (msg) msg.style.display = "block";
+        form.style.display = "none";
+        msg.style.display = "block";
     } else {
-        if (form) {
-            form.style.display = "block";
-            form.reset();
-        }
-        if (msg) msg.style.display = "none";
+        form.style.display = "block";
+        msg.style.display = "none";
+        document.getElementById("submissionForm").reset();
     }
 
     document.getElementById("lessonModal").style.display = "flex";
 }
 
-function closeLessonModal() { 
-    const modal = document.getElementById("lessonModal");
-    if (modal) modal.style.display = "none"; 
-}
+function closeLessonModal() { document.getElementById("lessonModal").style.display = "none"; }
 
 function testCodeRun() {
-    const codeElem = document.getElementById("projectCode");
+    const code = document.getElementById("projectCode").value.trim();
     const consoleBox = document.getElementById("compilerConsole");
-    if (!codeElem || !consoleBox) return;
-
-    const code = codeElem.value.trim();
     consoleBox.style.display = "block";
 
     if (code.length < 10) {
@@ -293,40 +284,35 @@ function testCodeRun() {
     }
 }
 
-async function submitProject(e) {
+function submitProject(e) {
     e.preventDefault();
-    const codeElem = document.getElementById("projectCode");
-    const mediaElem = document.getElementById("projectMedia");
-    if (!codeElem || !mediaElem) return;
 
     appState.submissions.push({
         id: Date.now(),
         studentName: appState.currentUser.name,
         studentEmail: appState.currentUser.email.toLowerCase(),
+        mentorEmail: appState.currentUser.mentorEmail ? appState.currentUser.mentorEmail.toLowerCase() : null,
         lessonTitle: appState.currentLesson.title,
-        code: codeElem.value,
-        media: mediaElem.value,
+        code: document.getElementById("projectCode").value,
+        media: document.getElementById("projectMedia").value,
         status: "Күтілуде"
     });
 
-    await saveData();
-    alert("🎉 Жоба барлық менторларға тексеруге жіберілді!");
+    saveData();
+    alert("🎉 Жоба Менторға тексеруге жіберілді!");
     closeLessonModal();
 }
 
-// 5. МЕНТОР ПАНЕЛІ
+// 7. МЕНТОР ТАБЛИЦАСЫ ЖӘНЕ КОД КӨРУ
 function renderMentorTable() {
     const tbody = document.getElementById("mentorTableBody");
-    if (!tbody) return;
     tbody.innerHTML = "";
 
-    if (!appState.submissions || appState.submissions.length === 0) {
-        tbody.innerHTML = "<tr><td colspan='5' style='text-align: center; color: #94a3b8;'>Әлі ешқандай тапсырма түскен жоқ</td></tr>";
-        return;
-    }
+    const subs = appState.submissions.filter(s => 
+        s.mentorEmail && s.mentorEmail.toLowerCase() === appState.currentUser.email.toLowerCase()
+    );
 
-    appState.submissions.forEach(item => {
-        if (!item) return;
+    subs.forEach(item => {
         const tr = document.createElement("tr");
         tr.innerHTML = `
             <td><strong>${item.studentName}</strong></td>
@@ -340,7 +326,7 @@ function renderMentorTable() {
 }
 
 function viewStudentCode(name, lesson, id) {
-    const sub = appState.submissions.find(s => s && s.id === id);
+    const sub = appState.submissions.find(s => s.id === id);
     if (sub) {
         document.getElementById("codeModalStudentName").innerText = "👨‍🎓 " + name;
         document.getElementById("codeModalLessonTitle").innerText = "📌 " + lesson;
@@ -350,12 +336,11 @@ function viewStudentCode(name, lesson, id) {
 }
 
 function closeViewCodeModal() {
-    const modal = document.getElementById("viewCodeModal");
-    if (modal) modal.style.display = "none";
+    document.getElementById("viewCodeModal").style.display = "none";
 }
 
-async function approveSub(id) {
-    const sub = appState.submissions.find(s => s && s.id === id);
+function approveSub(id) {
+    const sub = appState.submissions.find(s => s.id === id);
     if (sub) {
         sub.status = "Қабылданды";
         appState.xp += 50;
@@ -366,7 +351,7 @@ async function approveSub(id) {
             if (idx + 1 < appState.lessons.length) appState.lessons[idx + 1].status = "active";
         }
 
-        await saveData();
+        saveData();
         renderMentorTable();
         alert("✅ Тапсырма қабылданды!");
     }
