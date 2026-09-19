@@ -9,10 +9,9 @@ const defaultLessons = [
     { id: 8, title: "8. TDS Water Sensor", desc: "Су сапасын (TDS) өлшеу сенсоры.", icon: "💧", status: "locked", code: "void setup() { Serial.begin(9600); }\nvoid loop() {\n  int val = analogRead(A0);\n  Serial.print(\"TDS Value: \"); Serial.println(val);\n  delay(1000);\n}" }
 ];
 
-let appState = JSON.parse(localStorage.getItem("s7_lms_db_v11")) || {
+let appState = JSON.parse(localStorage.getItem("s7_lms_db_v12")) || {
     users: [],          
     currentUser: null,  
-    mentorRequests: [], 
     streak: 1,
     lastLoginDate: null,
     xp: 0,
@@ -22,7 +21,7 @@ let appState = JSON.parse(localStorage.getItem("s7_lms_db_v11")) || {
 };
 
 function saveData() {
-    localStorage.setItem("s7_lms_db_v11", JSON.stringify(appState));
+    localStorage.setItem("s7_lms_db_v12", JSON.stringify(appState));
 }
 
 window.onload = function() { checkSession(); };
@@ -41,12 +40,10 @@ function checkSession() {
         document.getElementById("studentNameDisplay").innerText = user.name;
         document.getElementById("xpCount").innerText = appState.xp;
         renderLessons();
-        renderStudentMentorStatus();
         renderAiChatHistory();
     } else if (user.role === "mentor") {
         document.getElementById("mentorApp").style.display = "block";
         document.getElementById("mentorNameDisplay").innerText = user.name;
-        renderMentorRequests();
         renderMentorTable();
     }
 }
@@ -78,7 +75,7 @@ function handleRegister(e) {
         return;
     }
 
-    const newUser = { role, name, email, phone, password, mentorEmail: null };
+    const newUser = { role, name, email, phone, password };
     appState.users.push(newUser);
     appState.currentUser = newUser;
     saveData();
@@ -102,83 +99,6 @@ function handleLogin(e) {
     } else {
         alert("❌ Логин немесе пароль қате!");
     }
-}
-
-function sendMentorRequest(e) {
-    e.preventDefault();
-    const mentorEmail = document.getElementById("targetMentorEmail").value.trim().toLowerCase();
-
-    const mentor = appState.users.find(u => u.email.toLowerCase() === mentorEmail && u.role === 'mentor');
-
-    if (!mentor) {
-        alert("❌ Бұл email бойынша Ментор табылмады! Email-дың дұрыс жазылғанын және оның Ментор екенін тексеріңіз.");
-        return;
-    }
-
-    const existingReq = appState.mentorRequests.find(r => r.studentEmail.toLowerCase() === appState.currentUser.email.toLowerCase());
-    if (existingReq) {
-        alert("⚠️ Сіз бұған дейін запрос жіберіп қойғансыз!");
-        return;
-    }
-
-    appState.mentorRequests.push({
-        id: Date.now(),
-        studentEmail: appState.currentUser.email.toLowerCase(),
-        studentName: appState.currentUser.name,
-        mentorEmail: mentorEmail,
-        status: "Күтілуде"
-    });
-
-    saveData();
-    alert("📩 Менторға запрос жіберілді!");
-    renderStudentMentorStatus();
-}
-
-function renderStudentMentorStatus() {
-    const box = document.getElementById("mentorStatusBox");
-    const req = appState.mentorRequests.find(r => r.studentEmail.toLowerCase() === appState.currentUser.email.toLowerCase());
-
-    if (appState.currentUser.mentorEmail) {
-        box.innerHTML = `<p style="color: #22c55e;">✅ Менторыңыз: <strong>${appState.currentUser.mentorEmail}</strong></p>`;
-    } else if (req) {
-        box.innerHTML = `<p style="color: #f59e0b;">⏳ Запрос жіберілді (${req.mentorEmail}). Ментордың қабылдауын күтіңіз.</p>`;
-    }
-}
-
-function renderMentorRequests() {
-    const list = document.getElementById("mentorRequestsList");
-    list.innerHTML = "";
-
-    const myReqs = appState.mentorRequests.filter(r => 
-        r.mentorEmail.toLowerCase() === appState.currentUser.email.toLowerCase() && r.status === "Күтілуде"
-    );
-
-    if (myReqs.length === 0) {
-        list.innerHTML = "<p style='color: #94a3b8;'>Жаңа запростар жоқ</p>";
-        return;
-    }
-
-    myReqs.forEach(r => {
-        const item = document.createElement("div");
-        item.style = "display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; background: #0f172a; padding: 10px; border-radius: 8px;";
-        item.innerHTML = `
-            <span>👨‍🎓 <strong>${r.studentName}</strong> (${r.studentEmail})</span>
-            <button class="duo-btn duo-btn-green" style="padding: 5px 10px; font-size: 12px;" onclick="acceptStudent('${r.studentEmail}', ${r.id})">Қабылдау ✅</button>
-        `;
-        list.appendChild(item);
-    });
-}
-
-function acceptStudent(studentEmail, reqId) {
-    const req = appState.mentorRequests.find(r => r.id === reqId);
-    if (req) req.status = "Қабылданды";
-
-    const student = appState.users.find(u => u.email.toLowerCase() === studentEmail.toLowerCase());
-    if (student) student.mentorEmail = appState.currentUser.email.toLowerCase();
-
-    saveData();
-    renderMentorRequests();
-    alert("✅ Студент сәтті қабылданды!");
 }
 
 function updateStreak() {
@@ -281,7 +201,6 @@ function submitProject(e) {
         id: Date.now(),
         studentName: appState.currentUser.name,
         studentEmail: appState.currentUser.email.toLowerCase(),
-        mentorEmail: null,
         lessonTitle: appState.currentLesson.title,
         code: document.getElementById("projectCode").value,
         media: document.getElementById("projectMedia").value,
@@ -289,7 +208,7 @@ function submitProject(e) {
     });
 
     saveData();
-    alert("🎉 Жоба барлық менторларға тексеруге жіберілді!");
+    alert("🎉 Жоба барлық менторларға тексеруге сәтті жіберілді!");
     closeLessonModal();
 }
 
@@ -309,7 +228,7 @@ function renderMentorTable() {
         tr.innerHTML = `
             <td><strong>${item.studentName}</strong></td>
             <td>${item.lessonTitle}</td>
-            <td><a href="${item.media}" target="_blank" style="color: #38bdf8;">Wokwi</a></td>
+            <td><a href="${item.media}" target="_blank" style="color: #38bdf8;">Wokwi / Сілтеме</a></td>
             <td><button class="duo-btn duo-btn-primary" style="padding: 4px 8px; font-size: 12px;" onclick="viewStudentCode('${item.studentName}', '${item.lessonTitle}', ${item.id})">📄 Кодты көру</button></td>
             <td>${item.status === 'Күтілуде' ? `<button class="duo-btn duo-btn-green" style="padding: 4px 8px; font-size: 12px;" onclick="approveSub(${item.id})">Қабылдау</button>` : '✅ Қабылданды'}</td>
         `;
@@ -368,6 +287,8 @@ function sendAiMessage() {
             reply = "Датчиктерді оқу үшін analogRead() немесе digitalRead() функцияларын пайдаланасыз.";
         } else if (lower.includes("код") || lower.includes("error")) {
             reply = "Кодыңызда setup() пен loop() функцияларының дұрыс жазылғанын және жақшалардың түгел екенін тексеріңіз.";
+        } else if (lower.includes("серво") || lower.includes("servo")) {
+            reply = "Сервомоторды басқару үшін <Servo.h> кітапханасын қосып, attach() және write() функцияларын қолданасыз.";
         }
 
         appState.aiChatHistory.push({ sender: "ai", text: reply });
