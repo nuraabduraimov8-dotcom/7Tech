@@ -2,172 +2,513 @@
 <html lang="kk">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>S7 Robotics — LMS Platform</title>
-    <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
-    
-    <!-- Firebase Бұлтты База Скрипттері -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>S7 Robotics LMS</title>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: #0f172a; color: #f8fafc; min-height: 100vh; display: flex; flex-direction: column; }
+        
+        .container { max-width: 800px; margin: 0 auto; padding: 20px; width: 100%; flex: 1; display: flex; flex-direction: column; justify-content: center; }
+        
+        .duo-card { background: #1e293b; border: 2px solid #334155; border-radius: 16px; padding: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); margin-bottom: 20px; position: relative; z-index: 10; }
+        h1, h2, h3 { margin-bottom: 16px; color: #38bdf8; text-align: center; }
+        
+        .form-group { margin-bottom: 16px; }
+        label { display: block; margin-bottom: 8px; font-weight: 600; color: #94a3b8; }
+        input, select, textarea { width: 100%; padding: 12px 16px; background: #0f172a; border: 2px solid #475569; border-radius: 12px; color: white; font-size: 16px; outline: none; transition: border-color 0.2s; }
+        input:focus, select:focus, textarea:focus { border-color: #38bdf8; }
+        
+        .duo-btn { width: 100%; padding: 14px; border: none; border-radius: 12px; font-size: 16px; font-weight: bold; cursor: pointer; transition: transform 0.1s, background 0.2s; text-align: center; display: inline-block; text-decoration: none; }
+        .duo-btn:active { transform: scale(0.98); }
+        .duo-btn-primary { background: #0284c7; color: white; border-bottom: 4px solid #0369a1; }
+        .duo-btn-primary:hover { background: #0369a1; }
+        .duo-btn-green { background: #10b981; color: white; border-bottom: 4px solid #059669; }
+        .duo-btn-green:hover { background: #059669; }
+        .duo-btn-gray { background: #475569; color: white; border-bottom: 4px solid #334155; }
+        
+        .flex-row { display: flex; gap: 10px; }
+        
+        /* Lesson Map */
+        .map-container { display: flex; flex-direction: column; align-items: center; gap: 15px; padding: 20px 0; }
+        .map-node { display: flex; flex-direction: column; align-items: center; gap: 5px; }
+        .node-btn { width: 60px; height: 60px; border-radius: 50%; border: none; font-size: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        .node-label { font-size: 14px; font-weight: 600; color: #cbd5e1; text-align: center; }
+        .map-connector { width: 4px; height: 30px; background: #334155; }
+        .map-connector.active { background: #10b981; }
+
+        /* Modal */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); justify-content: center; align-items: center; z-index: 1000; padding: 15px; }
+        .modal-content { background: #1e293b; border: 2px solid #334155; border-radius: 16px; padding: 20px; width: 100%; max-width: 600px; max-height: 90vh; overflow-y: auto; }
+        
+        /* Table */
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #334155; font-size: 14px; }
+        th { color: #38bdf8; }
+
+        /* AI Chat */
+        .ai-chat-box { background: #0f172a; border: 1px solid #334155; border-radius: 12px; padding: 10px; height: 180px; overflow-y: auto; margin-bottom: 10px; display: flex; flex-direction: column; gap: 8px; }
+    </style>
 </head>
 <body>
 
-    <!-- АВТОРИЗАЦИЯ ЖӘНЕ ТІРКЕЛУ -->
-    <div id="authContainer" class="auth-wrapper">
-        <div class="auth-card">
-            <h2>S7 <span>ROBOTICS</span></h2>
-            
-            <div style="display: flex; gap: 10px; margin-bottom: 20px; margin-top: 15px;">
-                <button type="button" id="loginTabBtn" class="duo-btn duo-btn-primary" style="flex: 1;" onclick="switchAuthMode('login')">Кіру</button>
-                <button type="button" id="regTabBtn" class="duo-btn duo-btn-gray" style="flex: 1;" onclick="switchAuthMode('register')">Тіркелу</button>
+    <div class="container">
+        <!-- AUTH CONTAINER -->
+        <div id="authContainer" class="duo-card">
+            <h1>S7 Robotics LMS</h1>
+            <div class="flex-row" style="margin-bottom: 20px;">
+                <button id="loginTabBtn" class="duo-btn duo-btn-primary" onclick="switchAuthMode('login')">Кіру</button>
+                <button id="regTabBtn" class="duo-btn duo-btn-gray" onclick="switchAuthMode('reg')">Тіркелу</button>
             </div>
 
-            <!-- 1. КІРУ ФОРМАСЫ -->
+            <!-- Login Form -->
             <form id="loginForm" onsubmit="handleLogin(event)">
                 <div class="form-group">
-                    <label>Email немесе Телефон:</label>
-                    <input type="text" id="loginIdentifier" placeholder="example@mail.com" required>
+                    <label>Email немесе Телефон</label>
+                    <input type="text" id="loginIdentifier" required placeholder="example@mail.com">
                 </div>
                 <div class="form-group">
-                    <label>Құпия сөз (Пароль):</label>
-                    <input type="password" id="loginPassword" placeholder="Пароліңізді енгізіңіз" required>
+                    <label>Пароль</label>
+                    <input type="password" id="loginPassword" required placeholder="••••••••">
                 </div>
-                <button type="submit" class="duo-btn duo-btn-green w-100">Кіру 🚀</button>
+                <button type="submit" class="duo-btn duo-btn-primary">Кіру</button>
             </form>
 
-            <!-- 2. ТІРКЕЛУ ФОРМАСЫ -->
+            <!-- Register Form -->
             <form id="regForm" onsubmit="handleRegister(event)" style="display: none;">
                 <div class="form-group">
-                    <label>Рөлді таңдаңыз:</label>
-                    <select id="regRole" required>
-                        <option value="student">👨‍🎓 Студент</option>
-                        <option value="mentor">👨‍🏫 Ментор</option>
+                    <label>Рөліңіз</label>
+                    <select id="regRole">
+                        <option value="student">Студент</option>
+                        <option value="mentor">Ментор</option>
                     </select>
                 </div>
                 <div class="form-group">
-                    <label>Аты-жөніңіз:</label>
-                    <input type="text" id="regName" placeholder="Арман Қасымов" required>
+                    <label>Аты-жөніңіз</label>
+                    <input type="text" id="regName" required placeholder="Атыңыз">
                 </div>
                 <div class="form-group">
-                    <label>Email почтаңыз:</label>
-                    <input type="email" id="regEmail" placeholder="example@mail.com" required>
+                    <label>Email</label>
+                    <input type="email" id="regEmail" required placeholder="example@mail.com">
                 </div>
                 <div class="form-group">
-                    <label>Телефон нөміріңіз:</label>
-                    <input type="tel" id="regPhone" placeholder="+7 707 123 4567" required>
+                    <label>Телефон нөмірі</label>
+                    <input type="text" id="regPhone" required placeholder="+7...">
                 </div>
                 <div class="form-group">
-                    <label>Өзіңізге пароль ойлап табыңыз:</label>
-                    <input type="password" id="regPassword" placeholder="Кемінде 4 таңба" required>
+                    <label>Пароль</label>
+                    <input type="password" id="regPassword" required placeholder="••••••••">
                 </div>
-                <button type="submit" class="duo-btn duo-btn-green w-100">Тіркелу ✨</button>
+                <button type="submit" class="duo-btn duo-btn-green">Тіркелу</button>
             </form>
         </div>
-    </div>
 
-    <!-- СТУДЕНТ КАБИНЕТІ -->
-    <div id="studentApp" style="display: none;">
-        <header class="navbar">
-            <div class="logo">
-                <h2>S7 <span>ROBOTICS</span></h2>
+        <!-- STUDENT APP -->
+        <div id="studentApp" style="display: none;">
+            <div class="duo-card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h2>Қош келдіңіз, <span id="studentNameDisplay"></span>! 👨‍🎓</h2>
+                    <button class="duo-btn duo-btn-gray" style="width: auto; padding: 8px 14px;" onclick="logout()">Шығу</button>
+                </div>
+                <p style="color: #94a3b8; margin-bottom: 15px;">Жинақталған XP: <strong id="xpCount" style="color: #38bdf8;">0</strong></p>
+                
+                <h3>Сабақтар картасы</h3>
+                <div class="map-container" id="lessonsContainer"></div>
             </div>
-            <div class="duo-stats">
-                <div class="stat-item">🔥 <span id="streakCount">1</span> күн</div>
-                <div class="stat-item">⚡ <span id="xpCount">0</span> XP</div>
-                <div class="stat-item">👤 <span id="studentNameDisplay">Оқушы</span></div>
-                <button class="duo-btn duo-btn-gray" style="padding: 5px 10px;" onclick="logout()">Шығу 🚪</button>
-            </div>
-        </header>
 
-        <div class="container">
-            <div class="duo-layout">
-                <div class="lesson-map duo-card" style="width: 100%;">
-                    <h2>🤖 Arduino IDE & IoT Оқу Картасы</h2>
-                    <div id="lessonsContainer" class="lessons-tree"></div>
+            <!-- AI Assistant Card -->
+            <div class="duo-card">
+                <h3>🤖 ИИ Ассистент (Робототехника көмекшісі)</h3>
+                <div class="ai-chat-box" id="aiChatMessages"></div>
+                <div class="flex-row">
+                    <input type="text" id="aiInput" placeholder="Сұрағыңызды жазыңыз (мысалы: Сервомотор қалай қосылады?)..." style="flex: 1;">
+                    <button class="duo-btn duo-btn-primary" style="width: 100px;" onclick="sendAiMessage()">Жіберу</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- MENTOR APP -->
+        <div id="mentorApp" style="display: none;">
+            <div class="duo-card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h2>Ментор панелі: <span id="mentorNameDisplay"></span> 👨‍🏫</h2>
+                    <button class="duo-btn duo-btn-gray" style="width: auto; padding: 8px 14px;" onclick="logout()">Шығу</button>
+                </div>
+                <h3>Студенттердің тексерілетін тапсырмалары</h3>
+                <div style="overflow-x: auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Студент</th>
+                                <th>Сабақ</th>
+                                <th>Wokwi / Сілтеме</th>
+                                <th>Код</th>
+                                <th>Әрекет</th>
+                            </tr>
+                        </thead>
+                        <tbody id="mentorTableBody"></tbody>
+                    </table>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- МЕНТОР КАБИНЕТІ -->
-    <div id="mentorApp" style="display: none;">
-        <header class="navbar navbar-mentor">
-            <div class="logo">
-                <h2>S7 <span>MENTOR PANEL</span></h2>
-            </div>
-            <div class="duo-stats">
-                <div class="stat-item">👨‍🏫 <span id="mentorNameDisplay">Ментор</span></div>
-                <button class="duo-btn duo-btn-gray" style="padding: 5px 10px;" onclick="logout()">Шығу 🚪</button>
-            </div>
-        </header>
-
-        <div class="container">
-            <div class="duo-card">
-                <h3>📋 Тексеруге түскен барлық тапсырмалар</h3>
-                <table class="duo-table">
-                    <thead>
-                        <tr>
-                            <th>Студент</th>
-                            <th>Тапсырма</th>
-                            <th>Сілтеме</th>
-                            <th>Код</th>
-                            <th>Әрекет</th>
-                        </tr>
-                    </thead>
-                    <tbody id="mentorTableBody"></tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-
-    <!-- СТУДЕНТ САБАҚ MODAL -->
-    <div id="lessonModal" class="modal" style="display: none;">
-        <div class="modal-content duo-card">
-            <span class="close-btn" onclick="closeLessonModal()">&times;</span>
-            <h2 id="modalTitle">Сабақ</h2>
-            <p id="modalDesc" style="margin: 10px 0; color: #94a3b8;"></p>
+    <!-- LESSON MODAL -->
+    <div id="lessonModal" class="modal">
+        <div class="modal-content">
+            <h2 id="modalTitle"></h2>
+            <p id="modalDesc" style="color: #94a3b8; margin-bottom: 15px;"></p>
             
-            <label><strong>📌 Үлгі код:</strong></label>
-            <div class="code-box"><pre><code id="modalCode"></code></pre></div>
+            <!-- YouTube Video Link -->
+            <div id="modalVideoContainer" style="margin-bottom: 15px;">
+                <a id="modalVideoLink" href="#" target="_blank" class="duo-btn duo-btn-primary" style="background: #ef4444; border-bottom: 4px solid #b91c1c;">📺 YouTube-тен сабақты көру</a>
+            </div>
+
+            <!-- Task Prompt (Тапсырма) -->
+            <div style="background: #0f172a; padding: 12px; border-radius: 8px; border: 1px solid #334155; margin-bottom: 15px;">
+                <strong style="color: #38bdf8;">📌 Тапсырма:</strong>
+                <p id="modalTaskPrompt" style="margin-top: 5px; color: #e2e8f0;"></p>
+            </div>
 
             <form id="submissionForm" onsubmit="submitProject(event)">
                 <div class="form-group">
-                    <label>💻 Өз кодыңызды жазыңыз:</label>
-                    <textarea id="projectCode" rows="5" required placeholder="C++ / Arduino кодын осы жерге жазыңыз..."></textarea>
+                    <label>Сіздің C++ кодыңыз:</label>
+                    <textarea id="projectCode" rows="6" required placeholder="Тапсырмаға сай өз кодыңызды осында жазыңыз..."></textarea>
                 </div>
-
-                <button type="button" class="duo-btn duo-btn-primary w-100" onclick="testCodeRun()" style="margin-bottom: 10px;">⚡ Кодты синтаксиске тексеру</button>
-                <div id="compilerConsole" style="display: none; padding: 10px; border-radius: 8px; font-size: 13px; margin-bottom: 10px;"></div>
-
                 <div class="form-group">
-                    <label>🔗 Жоба симуляциясының сілтемесі (Wokwi / Tinkercad):</label>
+                    <label>Wokwi немесе GitHub сілтемесі</label>
                     <input type="url" id="projectMedia" required placeholder="https://wokwi.com/projects/...">
                 </div>
-
-                <button type="submit" class="duo-btn duo-btn-green w-100">Менторларға жіберу (+50 XP) 🚀</button>
+                <div class="flex-row">
+                    <button type="button" class="duo-btn duo-btn-gray" onclick="closeLessonModal()">Жабу</button>
+                    <button type="submit" class="duo-btn duo-btn-green">Тексеруге жіберу</button>
+                </div>
             </form>
-
-            <div id="alreadySubmittedMsg" style="display: none; padding: 15px; background: #0f172a; border-radius: 10px; border: 1px solid #22c55e; margin-top: 15px; text-align: center;">
-                <p style="color: #22c55e; font-weight: 700;">✅ Бұл тапсырма бойынша жауап жіберілген!</p>
-                <p style="color: #94a3b8; font-size: 13px; margin-top: 5px;">Қайтадан жауап жіберуге болмайды.</p>
-            </div>
+            <p id="alreadySubmittedMsg" style="display: none; color: #10b981; font-weight: bold; text-align: center; margin-top: 15px;">✅ Бұл тапсырма қабылданды немесе тексерілуде!</p>
         </div>
     </div>
 
-    <!-- МЕНТОР КОД ҚАРАУ MODAL -->
-    <div id="viewCodeModal" class="modal" style="display: none;">
-        <div class="modal-content duo-card">
-            <span class="close-btn" onclick="closeViewCodeModal()">&times;</span>
-            <h3 id="codeModalStudentName">Студент коды</h3>
-            <p id="codeModalLessonTitle" style="color: #94a3b8; margin-bottom: 10px;"></p>
-            <div class="code-box" style="max-height: 350px; overflow-y: auto;">
-                <pre><code id="codeModalContent" style="color: #38bdf8;"></code></pre>
-            </div>
-            <button class="duo-btn duo-btn-primary w-100" style="margin-top: 15px;" onclick="closeViewCodeModal()">Жабу</button>
+    <!-- VIEW CODE MODAL -->
+    <div id="viewCodeModal" class="modal">
+        <div class="modal-content">
+            <h3 id="codeModalStudentName"></h3>
+            <p id="codeModalLessonTitle" style="color: #38bdf8; margin-bottom: 10px;"></p>
+            <pre style="background: #0f172a; padding: 12px; border-radius: 8px; overflow-x: auto; color: #38bdf8; max-height: 300px;"><code id="codeModalContent"></code></pre>
+            <br>
+            <button class="duo-btn duo-btn-gray" onclick="closeViewCodeModal()">Жабу</button>
         </div>
     </div>
 
-    <script src="app.js"></script>
+    <script>
+        // Firebase Configuration (Өз кілттеріңізді қойыңыз)
+        const firebaseConfig = {
+            apiKey: "СІЗДІҢ_API_КІЛТІҢІЗ",
+            authDomain: "СІЗДІҢ_ДОМЕЙН.firebaseapp.com",
+            databaseURL: "https://techdata-e059-default-rtdb.europe-west1.firebaseapp.com",
+            projectId: "techdata-e059",
+            storageBucket: "СІЗДІҢ_BUCKET",
+            messagingSenderId: "СІЗДІҢ_SENDER_ID",
+            appId: "СІЗДІҢ_APP_ID"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        const defaultLessons = [
+            { id: 1, title: "1. LED Blink", desc: "13-пиндегі диодты жыпылықтату.", icon: "💡", status: "active", taskPrompt: "Ардуиноның 13-ші піндегі жарықдиодты (LED) секунд сайын қосып-өшіретін код жазыңыз.", videoUrl: "https://www.youtube.com/results?search_query=arduino+blink+tutorial" },
+            { id: 2, title: "2. Button & LED", desc: "Батырма арқылы диодты қосу.", icon: "🔘", status: "locked", taskPrompt: "Батырманы басқан кезде жарықдиод жанатындай етіп C++ коды жазыңыз.", videoUrl: "https://www.youtube.com/results?search_query=arduino+button+led" },
+            { id: 3, title: "3. Potentiometer PWM", desc: "Аналогты сигналмен жарықтықты реттеу.", icon: "🎛️", status: "locked", taskPrompt: "Потенциометр арқылы LED жарықтығын PWM көмегімен басқаратын код жазыңыз.", videoUrl: "https://www.youtube.com/results?search_query=arduino+potentiometer+pwm" },
+            { id: 4, title: "4. Servo Motor Control", desc: "Сервомоторды бұру.", icon: "🦾", status: "locked", taskPrompt: "Сервоприводты 0 және 90 градусқа кезекпен айналдыратын код жазыңыз.", videoUrl: "https://www.youtube.com/results?search_query=arduino+servo+motor" },
+            { id: 5, title: "5. Ultrasonic Sensor", desc: "Қашықтықты өлшеу.", icon: "📏", status: "locked", taskPrompt: "HC-SR04 ультрадыбыстық сенсоры арқылы қашықтықты өлшеп, Serial-ға шығаратын код жазыңыз.", videoUrl: "https://www.youtube.com/results?search_query=arduino+ultrasonic+sensor" }
+        ];
+
+        let appState = {
+            users: [],          
+            currentUser: null,  
+            streak: 1,
+            lastLoginDate: null,
+            xp: 0,
+            lessons: defaultLessons,
+            submissions: [],
+            aiChatHistory: []
+        };
+
+        function saveData() {
+            db.ref('s7_lms_db').set(appState);
+        }
+
+        window.onload = function() {
+            db.ref('s7_lms_db').on('value', (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    appState = data;
+                } else {
+                    saveData();
+                }
+                checkSession();
+            });
+        };
+
+        function checkSession() {
+            const user = appState.currentUser;
+            document.getElementById("authContainer").style.display = "none";
+            document.getElementById("studentApp").style.display = "none";
+            document.getElementById("mentorApp").style.display = "none";
+
+            if (!user) {
+                document.getElementById("authContainer").style.display = "block";
+            } else if (user.role === "student") {
+                document.getElementById("studentApp").style.display = "block";
+                document.getElementById("studentNameDisplay").innerText = user.name;
+                document.getElementById("xpCount").innerText = appState.xp || 0;
+                renderLessons();
+                renderAiChatHistory();
+            } else if (user.role === "mentor") {
+                document.getElementById("mentorApp").style.display = "block";
+                document.getElementById("mentorNameDisplay").innerText = user.name;
+                renderMentorTable();
+            }
+        }
+
+        function switchAuthMode(mode) {
+            if (mode === 'login') {
+                document.getElementById("loginForm").style.display = "block";
+                document.getElementById("regForm").style.display = "none";
+                document.getElementById("loginTabBtn").className = "duo-btn duo-btn-primary";
+                document.getElementById("regTabBtn").className = "duo-btn duo-btn-gray";
+            } else {
+                document.getElementById("loginForm").style.display = "none";
+                document.getElementById("regForm").style.display = "block";
+                document.getElementById("loginTabBtn").className = "duo-btn duo-btn-gray";
+                document.getElementById("regTabBtn").className = "duo-btn duo-btn-primary";
+            }
+        }
+
+        function handleRegister(e) {
+            e.preventDefault();
+            const role = document.getElementById("regRole").value;
+            const name = document.getElementById("regName").value.trim();
+            const email = document.getElementById("regEmail").value.trim().toLowerCase();
+            const phone = document.getElementById("regPhone").value.trim();
+            const password = document.getElementById("regPassword").value.trim();
+
+            if (appState.users && appState.users.some(u => u.email.toLowerCase() === email)) {
+                alert("⚠️ Бұл email бұрын тіркелген!");
+                return;
+            }
+
+            const newUser = { role, name, email, phone, password };
+            if (!appState.users) appState.users = [];
+            appState.users.push(newUser);
+            appState.currentUser = newUser;
+            saveData();
+            alert("🎉 Тіркелу сәтті өтті!");
+        }
+
+        function handleLogin(e) {
+            e.preventDefault();
+            const id = document.getElementById("loginIdentifier").value.trim().toLowerCase();
+            const pass = document.getElementById("loginPassword").value.trim();
+
+            const user = appState.users ? appState.users.find(u => 
+                (u.email.toLowerCase() === id || u.phone.trim() === id) && u.password === pass
+            ) : null;
+
+            if (user) {
+                appState.currentUser = user;
+                saveData();
+            } else {
+                alert("❌ Логин немесе пароль қате!");
+            }
+        }
+
+        function logout() {
+            appState.currentUser = null;
+            saveData();
+        }
+
+        function renderLessons() {
+            const container = document.getElementById("lessonsContainer");
+            if (!container) return;
+            container.innerHTML = "";
+
+            if (!appState.lessons) appState.lessons = defaultLessons;
+
+            appState.lessons.forEach((lesson, index) => {
+                const node = document.createElement("div");
+                node.className = "map-node";
+                let btnClass = lesson.status === "completed" ? "duo-btn-green" : (lesson.status === "active" ? "duo-btn-primary" : "duo-btn-gray");
+
+                node.innerHTML = `
+                    <button class="node-btn ${btnClass}" onclick="${lesson.status !== 'locked' ? `openLessonModal(${lesson.id})` : ''}">
+                        ${lesson.status === 'completed' ? '✓' : lesson.icon}
+                    </button>
+                    <span class="node-label">${lesson.title}</span>
+                `;
+                container.appendChild(node);
+
+                if (index < appState.lessons.length - 1) {
+                    const conn = document.createElement("div");
+                    conn.className = `map-connector ${lesson.status === 'completed' ? 'active' : ''}`;
+                    container.appendChild(conn);
+                }
+            });
+        }
+
+        function openLessonModal(id) {
+            const lesson = appState.lessons.find(l => l.id === id);
+            appState.currentLesson = lesson;
+            document.getElementById("modalTitle").innerText = lesson.title;
+            document.getElementById("modalDesc").innerText = lesson.desc;
+            document.getElementById("modalTaskPrompt").innerText = lesson.taskPrompt;
+            document.getElementById("modalVideoLink").href = lesson.videoUrl;
+            document.getElementById("projectCode").value = "";
+
+            const hasSubmitted = appState.submissions && appState.submissions.some(s => 
+                s.studentEmail.toLowerCase() === appState.currentUser.email.toLowerCase() && s.lessonTitle === lesson.title
+            );
+
+            const form = document.getElementById("submissionForm");
+            const msg = document.getElementById("alreadySubmittedMsg");
+
+            if (hasSubmitted) {
+                form.style.display = "none";
+                msg.style.display = "block";
+            } else {
+                form.style.display = "block";
+                msg.style.display = "none";
+            }
+
+            document.getElementById("lessonModal").style.display = "flex";
+        }
+
+        function closeLessonModal() { document.getElementById("lessonModal").style.display = "none"; }
+
+        function submitProject(e) {
+            e.preventDefault();
+            if (!appState.submissions) appState.submissions = [];
+            
+            appState.submissions.push({
+                id: Date.now(),
+                studentName: appState.currentUser.name,
+                studentEmail: appState.currentUser.email.toLowerCase(),
+                lessonTitle: appState.currentLesson.title,
+                code: document.getElementById("projectCode").value,
+                media: document.getElementById("projectMedia").value,
+                status: "Күтілуде"
+            });
+
+            saveData();
+            alert("🎉 Тапсырма менторға сәтті жіберілді!");
+            closeLessonModal();
+        }
+
+        function renderMentorTable() {
+            const tbody = document.getElementById("mentorTableBody");
+            if (!tbody) return;
+            tbody.innerHTML = "";
+
+            const subs = appState.submissions || [];
+            if (subs.length === 0) {
+                tbody.innerHTML = "<tr><td colspan='5' style='text-align:center; color:#94a3b8;'>Әзірге тапсырмалар жоқ</td></tr>";
+                return;
+            }
+
+            subs.forEach(item => {
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
+                    <td><strong>${item.studentName}</strong></td>
+                    <td>${item.lessonTitle}</td>
+                    <td><a href="${item.media}" target="_blank" style="color: #38bdf8;">Wokwi / Сілтеме</a></td>
+                    <td><button class="duo-btn duo-btn-primary" style="padding: 4px 8px; font-size: 12px;" onclick="viewStudentCode('${item.studentName}', '${item.lessonTitle}', ${item.id})">📄 Көру</button></td>
+                    <td>${item.status === 'Күтілуде' ? `<button class="duo-btn duo-btn-green" style="padding: 4px 8px; font-size: 12px;" onclick="approveSub(${item.id})">Қабылдау</button>` : '✅ Қабылданды'}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function viewStudentCode(name, lesson, id) {
+            const sub = (appState.submissions || []).find(s => s.id === id);
+            if (sub) {
+                document.getElementById("codeModalStudentName").innerText = "👨‍🎓 " + name;
+                document.getElementById("codeModalLessonTitle").innerText = "📌 " + lesson;
+                document.getElementById("codeModalContent").innerText = sub.code;
+                document.getElementById("viewCodeModal").style.display = "flex";
+            }
+        }
+
+        function closeViewCodeModal() { document.getElementById("viewCodeModal").style.display = "none"; }
+
+        function approveSub(id) {
+            const sub = (appState.submissions || []).find(s => s.id === id);
+            if (sub) {
+                sub.status = "Қабылданды";
+                appState.xp = (appState.xp || 0) + 50;
+
+                const idx = appState.lessons.findIndex(l => l.title === sub.lessonTitle);
+                if (idx !== -1) {
+                    appState.lessons[idx].status = "completed";
+                    if (idx + 1 < appState.lessons.length) appState.lessons[idx + 1].status = "active";
+                }
+
+                saveData();
+                alert("✅ Тапсырма қабылданды!");
+            }
+        }
+
+        function sendAiMessage() {
+            const input = document.getElementById("aiInput");
+            const text = input.value.trim();
+            if (!text) return;
+
+            if (!appState.aiChatHistory) appState.aiChatHistory = [];
+            appState.aiChatHistory.push({ sender: "user", text: text });
+            input.value = "";
+            renderAiChatHistory();
+            saveData();
+
+            setTimeout(() => {
+                let reply = "Сәлем! Робототехника және Arduino сұрақтарыңызға көмектесуге дайынмын.";
+                const lower = text.toLowerCase();
+                if (lower.includes("led") || lower.includes("диод")) {
+                    reply = "Диодты қосу үшін pinMode(pin, OUTPUT) және digitalWrite(pin, HIGH) пайдаланыңыз.";
+                } else if (lower.includes("серво") || lower.includes("servo")) {
+                    reply = "Сервомотор үшін <Servo.h> кітапханасын қосып, myservo.write(90) арқылы бұра аласыз.";
+                } else if (lower.includes("датчик") || lower.includes("сенсор")) {
+                    reply = "Сенсорлардан мәлімет алу үшін analogRead() немесе digitalRead() қолданылады.";
+                }
+                appState.aiChatHistory.push({ sender: "ai", text: reply });
+                saveData();
+                renderAiChatHistory();
+            }, 500);
+        }
+
+        function renderAiChatHistory() {
+            const chatBox = document.getElementById("aiChatMessages");
+            if (!chatBox) return;
+            chatBox.innerHTML = "";
+            (appState.aiChatHistory || []).forEach(msg => {
+                const div = document.createElement("div");
+                div.style.padding = "8px 12px";
+                div.style.borderRadius = "8px";
+                if (msg.sender === "user") {
+                    div.style.background = "#0284c7";
+                    div.style.color = "white";
+                    div.style.textAlign = "right";
+                    div.style.marginLeft = "20px";
+                } else {
+                    div.style.background = "#334155";
+                    div.style.color = "#e2e8f0";
+                    div.style.textAlign = "left";
+                    div.style.marginRight = "20px";
+                }
+                div.innerText = msg.text;
+                chatBox.appendChild(div);
+            });
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+    </script>
 </body>
 </html>
