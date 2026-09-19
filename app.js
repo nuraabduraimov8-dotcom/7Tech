@@ -17,7 +17,8 @@ let appState = JSON.parse(localStorage.getItem("s7_lms_db_v11")) || {
     lastLoginDate: null,
     xp: 0,
     lessons: defaultLessons,
-    submissions: []
+    submissions: [],
+    aiChatHistory: []
 };
 
 function saveData() {
@@ -41,6 +42,7 @@ function checkSession() {
         document.getElementById("xpCount").innerText = appState.xp;
         renderLessons();
         renderStudentMentorStatus();
+        renderAiChatHistory();
     } else if (user.role === "mentor") {
         document.getElementById("mentorApp").style.display = "block";
         document.getElementById("mentorNameDisplay").innerText = user.name;
@@ -172,12 +174,7 @@ function acceptStudent(studentEmail, reqId) {
     if (req) req.status = "Қабылданды";
 
     const student = appState.users.find(u => u.email.toLowerCase() === studentEmail.toLowerCase());
-    if (student) {
-        student.mentorEmail = appState.currentUser.email.toLowerCase();
-        if (appState.currentUser && appState.currentUser.email.toLowerCase() === student.email.toLowerCase()) {
-            appState.currentUser.mentorEmail = student.mentorEmail;
-        }
-    }
+    if (student) student.mentorEmail = appState.currentUser.email.toLowerCase();
 
     saveData();
     renderMentorRequests();
@@ -280,19 +277,11 @@ function testCodeRun() {
 function submitProject(e) {
     e.preventDefault();
 
-    let currentMentor = appState.currentUser.mentorEmail;
-    if (!currentMentor) {
-        const studentReq = appState.mentorRequests.find(r => r.studentEmail.toLowerCase() === appState.currentUser.email.toLowerCase() && r.status === "Қабылданды");
-        if (studentReq) {
-            currentMentor = studentReq.mentorEmail;
-        }
-    }
-
     appState.submissions.push({
         id: Date.now(),
         studentName: appState.currentUser.name,
         studentEmail: appState.currentUser.email.toLowerCase(),
-        mentorEmail: currentMentor ? currentMentor.toLowerCase() : null,
+        mentorEmail: null,
         lessonTitle: appState.currentLesson.title,
         code: document.getElementById("projectCode").value,
         media: document.getElementById("projectMedia").value,
@@ -300,7 +289,7 @@ function submitProject(e) {
     });
 
     saveData();
-    alert("🎉 Жоба Менторға тексеруге жіберілді!");
+    alert("🎉 Жоба барлық менторларға тексеруге жіберілді!");
     closeLessonModal();
 }
 
@@ -308,11 +297,7 @@ function renderMentorTable() {
     const tbody = document.getElementById("mentorTableBody");
     tbody.innerHTML = "";
 
-    const mentorEmail = appState.currentUser.email.toLowerCase();
-    
-    const subs = appState.submissions.filter(s => {
-        return !s.mentorEmail || s.mentorEmail.toLowerCase() === mentorEmail;
-    });
+    const subs = appState.submissions;
 
     if (subs.length === 0) {
         tbody.innerHTML = "<tr><td colspan='5' style='text-align:center; color:#94a3b8;'>Әзірге тексерілетін тапсырмалар жоқ</td></tr>";
@@ -362,4 +347,56 @@ function approveSub(id) {
         renderMentorTable();
         alert("✅ Тапсырма қабылданды!");
     }
+}
+
+function sendAiMessage() {
+    const input = document.getElementById("aiInput");
+    const text = input.value.trim();
+    if (!text) return;
+
+    appState.aiChatHistory.push({ sender: "user", text: text });
+    input.value = "";
+    renderAiChatHistory();
+
+    setTimeout(() => {
+        let reply = "Сәлем! Робототехника және Arduino сұрақтарыңызға көмектесуге дайынмын.";
+        const lower = text.toLowerCase();
+
+        if (lower.includes("led") || lower.includes("диод")) {
+            reply = "Диодты қосу үшін pinMode(pin, OUTPUT) қолданып, digitalWrite(pin, HIGH) арқылы жаға аласыз.";
+        } else if (lower.includes("датчик") || lower.includes("сенсор")) {
+            reply = "Датчиктерді оқу үшін analogRead() немесе digitalRead() функцияларын пайдаланасыз.";
+        } else if (lower.includes("код") || lower.includes("error")) {
+            reply = "Кодыңызда setup() пен loop() функцияларының дұрыс жазылғанын және жақшалардың түгел екенін тексеріңіз.";
+        }
+
+        appState.aiChatHistory.push({ sender: "ai", text: reply });
+        saveData();
+        renderAiChatHistory();
+    }, 600);
+}
+
+function renderAiChatHistory() {
+    const chatBox = document.getElementById("aiChatMessages");
+    if (!chatBox) return;
+    chatBox.innerHTML = "";
+
+    appState.aiChatHistory.forEach(msg => {
+        const div = document.createElement("div");
+        div.style.margin = "8px 0";
+        div.style.padding = "8px 12px";
+        div.style.borderRadius = "8px";
+        if (msg.sender === "user") {
+            div.style.background = "#3b82f6";
+            div.style.color = "white";
+            div.style.textAlign = "right";
+        } else {
+            div.style.background = "#334155";
+            div.style.color = "#e2e8f0";
+            div.style.textAlign = "left";
+        }
+        div.innerText = msg.text;
+        chatBox.appendChild(div);
+    });
+    chatBox.scrollTop = chatBox.scrollHeight;
 }
