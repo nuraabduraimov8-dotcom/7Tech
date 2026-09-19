@@ -3,335 +3,584 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Жобаны қорғау порталы</title>
+    <title>S7 Robotics LMS</title>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
     <style>
-        :root {
-            --primary: #4f46e5;
-            --primary-hover: #4338ca;
-            --bg-color: #f3f4f6;
-            --card-bg: #ffffff;
-            --text-main: #1f2937;
-            --text-muted: #6b7280;
-            --border: #e5e7eb;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: #0f172a; color: #f8fafc; min-height: 100vh; display: flex; flex-direction: column; }
+        
+        .container { max-width: 800px; margin: 0 auto; padding: 20px; width: 100%; flex: 1; display: flex; flex-direction: column; justify-content: center; }
+        
+        .duo-card { background: #1e293b; border: 2px solid #334155; border-radius: 16px; padding: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); margin-bottom: 20px; position: relative; z-index: 10; }
+        h1, h2, h3 { margin-bottom: 16px; color: #38bdf8; text-align: center; }
+        
+        .form-group { margin-bottom: 16px; }
+        label { display: block; margin-bottom: 8px; font-weight: 600; color: #94a3b8; }
+        input, select, textarea { width: 100%; padding: 12px 16px; background: #0f172a; border: 2px solid #475569; border-radius: 12px; color: white; font-size: 16px; outline: none; transition: border-color 0.2s; }
+        input:focus, select:focus, textarea:focus { border-color: #38bdf8; }
+        
+        .duo-btn { width: 100%; padding: 14px; border: none; border-radius: 12px; font-size: 16px; font-weight: bold; cursor: pointer; transition: transform 0.1s, background 0.2s; text-align: center; display: inline-block; text-decoration: none; }
+        .duo-btn:active { transform: scale(0.98); }
+        .duo-btn-primary { background: #0284c7; color: white; border-bottom: 4px solid #0369a1; }
+        .duo-btn-primary:hover { background: #0369a1; }
+        .duo-btn-green { background: #10b981; color: white; border-bottom: 4px solid #059669; }
+        .duo-btn-green:hover { background: #059669; }
+        .duo-btn-gray { background: #475569; color: white; border-bottom: 4px solid #334155; }
+        
+        .flex-row { display: flex; gap: 10px; }
+        
+        /* Stats Bar */
+        .stats-bar { display: flex; justify-content: space-around; background: #0f172a; padding: 10px; border-radius: 12px; border: 1px solid #334155; margin-bottom: 15px; }
+        .stat-item { font-size: 15px; font-weight: 600; color: #cbd5e1; display: flex; align-items: center; gap: 6px; }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
+        /* Lesson Map */
+        .map-container { display: flex; flex-direction: column; align-items: center; gap: 15px; padding: 20px 0; }
+        .map-node { display: flex; flex-direction: column; align-items: center; gap: 5px; }
+        .node-btn { width: 60px; height: 60px; border-radius: 50%; border: none; font-size: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        .node-label { font-size: 14px; font-weight: 600; color: #cbd5e1; text-align: center; }
+        .map-connector { width: 4px; height: 30px; background: #334155; }
+        .map-connector.active { background: #10b981; }
 
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-        }
+        /* Modal */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); justify-content: center; align-items: center; z-index: 1000; padding: 15px; }
+        .modal-content { background: #1e293b; border: 2px solid #334155; border-radius: 16px; padding: 20px; width: 100%; max-width: 600px; max-height: 90vh; overflow-y: auto; }
+        
+        /* Table */
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #334155; font-size: 14px; }
+        th { color: #38bdf8; }
 
-        .container {
-            width: 100%;
-            max-width: 900px;
-            background: var(--card-bg);
-            border-radius: 16px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
-            overflow: hidden;
-            margin: 20px;
-        }
-
-        /* Басты бет / Роль таңдау бөлімі */
-        #auth-screen {
-            padding: 40px;
-            text-align: center;
-        }
-
-        #auth-screen h1 {
-            margin-bottom: 10px;
-            color: var(--primary);
-        }
-
-        #auth-screen p {
-            color: var(--text-muted);
-            margin-bottom: 30px;
-        }
-
-        .role-buttons {
-            display: flex;
-            justify-content: center;
-            gap: 20px;
-        }
-
-        .btn-role {
-            padding: 15px 30px;
-            font-size: 16px;
-            font-weight: 600;
-            border: 2px solid var(--primary);
-            border-radius: 8px;
-            background: white;
-            color: var(--primary);
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .btn-role:hover {
-            background: var(--primary);
-            color: white;
-            transform: translateY(-2px);
-        }
-
-        /* Кабинеттердің ортақ стилі */
-        .dashboard {
-            display: none;
-            padding: 30px;
-        }
-
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 2px solid var(--border);
-            padding-bottom: 15px;
-            margin-bottom: 25px;
-        }
-
-        .header h2 {
-            color: var(--primary);
-        }
-
-        .btn-logout {
-            padding: 8px 16px;
-            background: #ef4444;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: background 0.2s;
-        }
-
-        .btn-logout:hover {
-            background: #dc2626;
-        }
-
-        .grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-        }
-
-        @media (max-width: 768px) {
-            .grid {
-                grid-template-columns: 1fr;
-            }
-            .role-buttons {
-                flex-direction: column;
-            }
-        }
-
-        .card {
-            background: #f9fafb;
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            padding: 20px;
-        }
-
-        .card h3 {
-            margin-bottom: 15px;
-            font-size: 18px;
-            color: var(--text-main);
-            border-bottom: 1px solid var(--border);
-            padding-bottom: 8px;
-        }
-
-        /* Тапсырмалар стилі (тиеспедік) */
-        .task-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: white;
-            padding: 10px 15px;
-            border-radius: 6px;
-            margin-bottom: 10px;
-            border: 1px solid var(--border);
-        }
-
-        .task-status {
-            font-size: 12px;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-weight: 600;
-        }
-
-        .status-pending { background: #fef3c7; color: #d97706; }
-        .status-done { background: #d1fae5; color: #059669; }
-
-        /* ИИ ассистент стилі (тиеспедік) */
-        .ai-chat-box {
-            display: flex;
-            flex-direction: column;
-            height: 180px;
-        }
-
-        .ai-messages {
-            flex-grow: 1;
-            background: white;
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            padding: 10px;
-            overflow-y: auto;
-            margin-bottom: 10px;
-            font-size: 14px;
-        }
-
-        .ai-input-group {
-            display: flex;
-            gap: 8px;
-        }
-
-        .ai-input-group input {
-            flex-grow: 1;
-            padding: 8px 12px;
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            outline: none;
-        }
-
-        .ai-input-group button {
-            padding: 8px 15px;
-            background: var(--primary);
-            color: white;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-        }
+        /* AI Chat */
+        .ai-chat-box { background: #0f172a; border: 1px solid #334155; border-radius: 12px; padding: 10px; height: 180px; overflow-y: auto; margin-bottom: 10px; display: flex; flex-direction: column; gap: 8px; }
     </style>
 </head>
 <body>
 
     <div class="container">
-        <!-- КІРУ ЭКРАНЫ (Тіркеусіз бір шерту арқылы өту) -->
-        <div id="auth-screen">
-            <h1>Жобаны қорғау жүйесі</h1>
-            <p>Жалғастыру үшін рөлді таңдаңыз (тіркелу қажет емес)</p>
-            <div class="role-buttons">
-                <button class="btn-role" onclick="loginAs('student')">Студент кабинеті</button>
-                <button class="btn-role" onclick="loginAs('mentor')">Ментор (Жетекші) кабинеті</button>
+        <!-- AUTH CONTAINER -->
+        <div id="authContainer" class="duo-card">
+            <h1>S7 Robotics LMS</h1>
+            <div class="flex-row" style="margin-bottom: 20px;">
+                <button id="loginTabBtn" class="duo-btn duo-btn-primary" onclick="switchAuthMode('login')">Кіру</button>
+                <button id="regTabBtn" class="duo-btn duo-btn-gray" onclick="switchAuthMode('reg')">Тіркелу</button>
+            </div>
+
+            <!-- Login Form -->
+            <form id="loginForm" onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label>Email немесе Телефон</label>
+                    <input type="text" id="loginIdentifier" required placeholder="example@mail.com немесе +7...">
+                </div>
+                <div class="form-group">
+                    <label>Пароль</label>
+                    <input type="password" id="loginPassword" required placeholder="••••••••">
+                </div>
+                <button type="submit" class="duo-btn duo-btn-primary">Кіру</button>
+            </form>
+
+            <!-- Register Form -->
+            <form id="regForm" onsubmit="handleRegister(event)" style="display: none;">
+                <div class="form-group">
+                    <label>Рөліңіз</label>
+                    <select id="regRole">
+                        <option value="student">Студент</option>
+                        <option value="mentor">Ментор</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Аты-жөніңіз</label>
+                    <input type="text" id="regName" required placeholder="Атыңыз">
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="regEmail" required placeholder="example@mail.com">
+                </div>
+                <div class="form-group">
+                    <label>Телефон нөмірі</label>
+                    <input type="text" id="regPhone" required placeholder="+7...">
+                </div>
+                <div class="form-group">
+                    <label>Пароль</label>
+                    <input type="password" id="regPassword" required placeholder="••••••••">
+                </div>
+                <button type="submit" class="duo-btn duo-btn-green">Тіркелу</button>
+            </form>
+        </div>
+
+        <!-- STUDENT APP -->
+        <div id="studentApp" style="display: none;">
+            <div class="duo-card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h2>Қош келдіңіз, <span id="studentNameDisplay"></span>! 👨‍🎓</h2>
+                    <button class="duo-btn duo-btn-gray" style="width: auto; padding: 8px 14px;" onclick="logout()">Шығу</button>
+                </div>
+
+                <!-- STREAK & XP STATS BAR -->
+                <div class="stats-bar">
+                    <div class="stat-item">🔥 Streak: <strong id="streakCount" style="color: #f97316;">0 күн</strong></div>
+                    <div class="stat-item">⭐ XP: <strong id="xpCount" style="color: #38bdf8;">0</strong></div>
+                </div>
+                
+                <h3>Сабақтар картасы</h3>
+                <div class="map-container" id="lessonsContainer"></div>
+            </div>
+
+            <!-- AI Assistant Card -->
+            <div class="duo-card">
+                <h3>🤖 ИИ Ассистент (Робототехника көмекшісі)</h3>
+                <div class="ai-chat-box" id="aiChatMessages"></div>
+                <div class="flex-row">
+                    <input type="text" id="aiInput" placeholder="Сұрағыңызды жазыңыз..." style="flex: 1;">
+                    <button class="duo-btn duo-btn-primary" style="width: 100px;" onclick="sendAiMessage()">Жіберу</button>
+                </div>
             </div>
         </div>
 
-        <!-- СТУДЕНТ КАБИНЕТІ -->
-        <div id="student-dashboard" class="dashboard">
-            <div class="header">
-                <h2>Студент кабинеті</h2>
-                <button class="btn-logout" onclick="logout()">Шығу</button>
-            </div>
-            <div class="grid">
-                <!-- Тапсырмалар бөлімі (Түспедік) -->
-                <div class="card">
-                    <h3>Менің тапсырмаларым</h3>
-                    <div class="task-item">
-                        <span>Сұлбаны құру (Proteus/Wokwi)</span>
-                        <span class="task-status status-done">Орындалды</span>
-                    </div>
-                    <div class="task-item">
-                        <span>Кодты жазу (C++)</span>
-                        <span class="task-status status-done">Орындалды</span>
-                    </div>
-                    <div class="task-item">
-                        <span>Қорғау презентациясы</span>
-                        <span class="task-status status-pending">Күтуде</span>
-                    </div>
+        <!-- MENTOR APP -->
+        <div id="mentorApp" style="display: none;">
+            <div class="duo-card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h2>Ментор панелі: <span id="mentorNameDisplay"></span> 👨‍🏫</h2>
+                    <button class="duo-btn duo-btn-gray" style="width: auto; padding: 8px 14px;" onclick="logout()">Шығу</button>
                 </div>
-
-                <!-- ИИ ассистент бөлімі (Тиеспедік) -->
-                <div class="card">
-                    <h3>ИИ Ассистент</h3>
-                    <div class="ai-chat-box">
-                        <div class="ai-messages" id="student-ai-messages">
-                            <div style="color: #6b7280;">Сәлем! Жобаңызға қатысты сұрақтарыңызды қойыңыз.</div>
-                        </div>
-                        <div class="ai-input-group">
-                            <input type="text" id="student-ai-input" placeholder="Сұрақ жазыңыз...">
-                            <button onclick="sendAiMessage('student')">Жіберу</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- МЕНТОР КАБИНЕТІ -->
-        <div id="mentor-dashboard" class="dashboard">
-            <div class="header">
-                <h2>Ментор кабинеті</h2>
-                <button class="btn-logout" onclick="logout()">Шығу</button>
-            </div>
-            <div class="grid">
-                <!-- Тапсырмалар бөлімі (Тиеспедік) -->
-                <div class="card">
-                    <h3>Студент тапсырмаларын бақылау</h3>
-                    <div class="task-item">
-                        <span>Аппараттық бөлікті тексеру</span>
-                        <span class="task-status status-done">Тексерілді</span>
-                    </div>
-                    <div class="task-item">
-                        <span>Кодтың дұрыстығын қарау</span>
-                        <span class="task-status status-pending">Тексеруде</span>
-                    </div>
-                </div>
-
-                <!-- ИИ ассистент бөлімі (Тиеспедік) -->
-                <div class="card">
-                    <h3>ИИ Ассистент (Ментор көмекшісі)</h3>
-                    <div class="ai-chat-box">
-                        <div class="ai-messages" id="mentor-ai-messages">
-                            <div style="color: #6b7280;">Сәлем! Студенттердің жобаларын бағалау бойынша кеңес беремін.</div>
-                        </div>
-                        <div class="ai-input-group">
-                            <input type="text" id="mentor-ai-input" placeholder="Сұрақ жазыңыз...">
-                            <button onclick="sendAiMessage('mentor')">Жіберу</button>
-                        </div>
-                    </div>
+                <h3>Студенттердің тексерілетін тапсырмалары</h3>
+                <div style="overflow-x: auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Студент</th>
+                                <th>Сабақ</th>
+                                <th>Wokwi / Сілтеме</th>
+                                <th>Код</th>
+                                <th>Әрекет</th>
+                            </tr>
+                        </thead>
+                        <tbody id="mentorTableBody"></tbody>
+                    </table>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- LESSON MODAL -->
+    <div id="lessonModal" class="modal">
+        <div class="modal-content">
+            <h2 id="modalTitle"></h2>
+            <p id="modalDesc" style="color: #94a3b8; margin-bottom: 15px;"></p>
+            
+            <!-- YouTube Video Link -->
+            <div id="modalVideoContainer" style="margin-bottom: 15px;">
+                <a id="modalVideoLink" href="#" target="_blank" class="duo-btn duo-btn-primary" style="background: #ef4444; border-bottom: 4px solid #b91c1c;">📺 YouTube-тен сабақты көру</a>
+            </div>
+
+            <!-- Task Prompt (Тапсырма) -->
+            <div style="background: #0f172a; padding: 12px; border-radius: 8px; border: 1px solid #334155; margin-bottom: 15px;">
+                <strong style="color: #38bdf8;">📌 Тапсырма:</strong>
+                <p id="modalTaskPrompt" style="margin-top: 5px; color: #e2e8f0;"></p>
+            </div>
+
+            <form id="submissionForm" onsubmit="submitProject(event)">
+                <div class="form-group">
+                    <label>Сіздің C++ кодыңыз:</label>
+                    <textarea id="projectCode" rows="6" required placeholder="Тапсырмаға сай өз кодыңызды осында жазыңыз..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Wokwi немесе GitHub сілтемесі</label>
+                    <input type="url" id="projectMedia" required placeholder="https://wokwi.com/projects/...">
+                </div>
+                <div class="flex-row">
+                    <button type="button" class="duo-btn duo-btn-gray" onclick="closeLessonModal()">Жабу</button>
+                    <button type="submit" class="duo-btn duo-btn-green">Тексеруге жіберу</button>
+                </div>
+            </form>
+            <p id="alreadySubmittedMsg" style="display: none; color: #10b981; font-weight: bold; text-align: center; margin-top: 15px;">✅ Бұл тапсырма қабылданды немесе тексерілуде!</p>
+        </div>
+    </div>
+
+    <!-- VIEW CODE MODAL -->
+    <div id="viewCodeModal" class="modal">
+        <div class="modal-content">
+            <h3 id="codeModalStudentName"></h3>
+            <p id="codeModalLessonTitle" style="color: #38bdf8; margin-bottom: 10px;"></p>
+            <pre style="background: #0f172a; padding: 12px; border-radius: 8px; overflow-x: auto; color: #38bdf8; max-height: 300px;"><code id="codeModalContent"></code></pre>
+            <br>
+            <button class="duo-btn duo-btn-gray" onclick="closeViewCodeModal()">Жабу</button>
+        </div>
+    </div>
+
     <script>
-        function loginAs(role) {
-            document.getElementById('auth-screen').style.display = 'none';
-            if (role === 'student') {
-                document.getElementById('student-dashboard').style.display = 'block';
-            } else if (role === 'mentor') {
-                document.getElementById('mentor-dashboard').style.display = 'block';
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "СІЗДІҢ_API_КІЛТІҢІЗ",
+            authDomain: "СІЗДІҢ_ДОМЕЙН.firebaseapp.com",
+            databaseURL: "https://techdata-e059-default-rtdb.europe-west1.firebaseapp.com",
+            projectId: "techdata-e059",
+            storageBucket: "СІЗДІҢ_BUCKET",
+            messagingSenderId: "СІЗДІҢ_SENDER_ID",
+            appId: "СІЗДІҢ_APP_ID"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        const defaultLessons = [
+            { id: 1, title: "1. LED Blink", desc: "13-пиндегі диодты жыпылықтату.", icon: "💡", status: "active", taskPrompt: "Ардуиноның 13-ші піндегі жарықдиодты (LED) секунд сайын қосып-өшіретін код жазыңыз.", videoUrl: "https://www.youtube.com/results?search_query=arduino+blink+tutorial" },
+            { id: 2, title: "2. Button & LED", desc: "Батырма арқылы диодты қосу.", icon: "🔘", status: "locked", taskPrompt: "Батырманы басқан кезде жарықдиод жанатындай етіп C++ коды жазыңыз.", videoUrl: "https://www.youtube.com/results?search_query=arduino+button+led" },
+            { id: 3, title: "3. Potentiometer PWM", desc: "Аналогты сигналмен жарықтықты реттеу.", icon: "🎛️", status: "locked", taskPrompt: "Потенциометр арқылы LED жарықтығын PWM көмегімен басқаратын код жазыңыз.", videoUrl: "https://www.youtube.com/results?search_query=arduino+potentiometer+pwm" },
+            { id: 4, title: "4. Servo Motor Control", desc: "Сервомоторды бұру.", icon: "🦾", status: "locked", taskPrompt: "Сервоприводты 0 және 90 градусқа кезекпен айналдыратын код жазыңыз.", videoUrl: "https://www.youtube.com/results?search_query=arduino+servo+motor" },
+            { id: 5, title: "5. Ultrasonic Sensor", desc: "Қашықтықты өлшеу.", icon: "📏", status: "locked", taskPrompt: "HC-SR04 ультрадыбыстық сенсоры арқылы қашықтықты өлшеп, Serial-ға шығаратын код жазыңыз.", videoUrl: "https://www.youtube.com/results?search_query=arduino+ultrasonic+sensor" }
+        ];
+
+        let remoteData = {
+            users: [],
+            lessons: defaultLessons,
+            submissions: [],
+            aiChatHistory: []
+        };
+
+        window.onload = function() {
+            db.ref('s7_lms_db').on('value', (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    remoteData = data;
+                    if (!remoteData.lessons) remoteData.lessons = defaultLessons;
+                    if (!remoteData.users) remoteData.users = [];
+                    if (!remoteData.submissions) remoteData.submissions = [];
+                } else {
+                    syncToFirebase();
+                }
+                checkSession();
+            });
+        };
+
+        function syncToFirebase() {
+            db.ref('s7_lms_db').set(remoteData);
+        }
+
+        // Streak есептеу және жаңарту логикасы
+        function updateStreak(user) {
+            const todayStr = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+            if (!user.lastActiveDate) {
+                user.streak = 1;
+                user.lastActiveDate = todayStr;
+            } else {
+                if (user.lastActiveDate !== todayStr) {
+                    const lastDate = new Date(user.lastActiveDate);
+                    const currentDate = new Date(todayStr);
+                    const diffTime = Math.abs(currentDate - lastDate);
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+                    if (diffDays === 1) {
+                        user.streak = (user.streak || 0) + 1;
+                    } else if (diffDays > 1) {
+                        user.streak = 1; // 1 күннен артық өтсе streak үзіледі
+                    }
+                    user.lastActiveDate = todayStr;
+                }
+            }
+
+            // Firebase-дегі қолданушы дерегін жаңарту
+            const users = remoteData.users || [];
+            const idx = users.findIndex(u => u.email.toLowerCase() === user.email.toLowerCase());
+            if (idx !== -1) {
+                users[idx] = user;
+                syncToFirebase();
+            }
+            localStorage.setItem("s7_current_user", JSON.stringify(user));
+        }
+
+        function checkSession() {
+            const currentUserJson = localStorage.getItem("s7_current_user");
+            let currentUser = currentUserJson ? JSON.parse(currentUserJson) : null;
+
+            document.getElementById("authContainer").style.display = "none";
+            document.getElementById("studentApp").style.display = "none";
+            document.getElementById("mentorApp").style.display = "none";
+
+            if (!currentUser) {
+                document.getElementById("authContainer").style.display = "block";
+            } else if (currentUser.role === "student") {
+                // Сервердегі деректермен актуальді күйге келтіру
+                const users = remoteData.users || [];
+                const freshUser = users.find(u => u.email.toLowerCase() === currentUser.email.toLowerCase());
+                if (freshUser) {
+                    currentUser = freshUser;
+                    localStorage.setItem("s7_current_user", JSON.stringify(currentUser));
+                }
+
+                updateStreak(currentUser);
+
+                document.getElementById("studentApp").style.display = "block";
+                document.getElementById("studentNameDisplay").innerText = currentUser.name;
+                document.getElementById("xpCount").innerText = currentUser.xp || 0;
+                document.getElementById("streakCount").innerText = (currentUser.streak || 1) + " күн";
+                renderLessons();
+                renderAiChatHistory();
+            } else if (currentUser.role === "mentor") {
+                document.getElementById("mentorApp").style.display = "block";
+                document.getElementById("mentorNameDisplay").innerText = currentUser.name;
+                renderMentorTable();
+            }
+        }
+
+        function switchAuthMode(mode) {
+            if (mode === 'login') {
+                document.getElementById("loginForm").style.display = "block";
+                document.getElementById("regForm").style.display = "none";
+                document.getElementById("loginTabBtn").className = "duo-btn duo-btn-primary";
+                document.getElementById("regTabBtn").className = "duo-btn duo-btn-gray";
+            } else {
+                document.getElementById("loginForm").style.display = "none";
+                document.getElementById("regForm").style.display = "block";
+                document.getElementById("loginTabBtn").className = "duo-btn duo-btn-gray";
+                document.getElementById("regTabBtn").className = "duo-btn duo-btn-primary";
+            }
+        }
+
+        function handleRegister(e) {
+            e.preventDefault();
+            const role = document.getElementById("regRole").value;
+            const name = document.getElementById("regName").value.trim();
+            const email = document.getElementById("regEmail").value.trim().toLowerCase();
+            const phone = document.getElementById("regPhone").value.trim();
+            const password = document.getElementById("regPassword").value.trim();
+
+            if (!remoteData.users) remoteData.users = [];
+
+            if (remoteData.users.some(u => u.email.toLowerCase() === email)) {
+                alert("⚠️ Бұл email бұрын тіркелген!");
+                return;
+            }
+
+            const todayStr = new Date().toISOString().slice(0, 10);
+            const newUser = { role, name, email, phone, password, xp: 0, streak: 1, lastActiveDate: todayStr };
+            remoteData.users.push(newUser);
+            syncToFirebase();
+
+            localStorage.setItem("s7_current_user", JSON.stringify(newUser));
+            alert("🎉 Тіркелу сәтті өтті!");
+            checkSession();
+        }
+
+        function handleLogin(e) {
+            e.preventDefault();
+            const id = document.getElementById("loginIdentifier").value.trim().toLowerCase();
+            const pass = document.getElementById("loginPassword").value.trim();
+
+            const users = remoteData.users || [];
+            const user = users.find(u => 
+                (u.email.toLowerCase() === id || u.phone.trim() === id) && u.password === pass
+            );
+
+            if (user) {
+                localStorage.setItem("s7_current_user", JSON.stringify(user));
+                checkSession();
+            } else {
+                alert("❌ Логин немесе пароль қате немесе аккаунт табылмады!");
             }
         }
 
         function logout() {
-            document.getElementById('student-dashboard').style.display = 'none';
-            document.getElementById('mentor-dashboard').style.display = 'none';
-            document.getElementById('auth-screen').style.display = 'block';
+            localStorage.removeItem("s7_current_user");
+            checkSession();
         }
 
-        // ИИ ассистенттің қарапайым жұмыс логикасы (өзгертілмеді)
-        function sendAiMessage(role) {
-            const inputField = document.getElementById(role + '-ai-input');
-            const messagesBox = document.getElementById(role + '-ai-messages');
-            const text = inputField.value.trim();
+        function renderLessons() {
+            const container = document.getElementById("lessonsContainer");
+            if (!container) return;
+            container.innerHTML = "";
 
-            if (text === '') return;
+            const lessons = remoteData.lessons || defaultLessons;
 
-            // Пайдаланушы хат жолдауы
-            messagesBox.innerHTML += `<div><b>Сіз:</b> ${text}</div>`;
-            inputField.value = '';
-            messagesBox.scrollTop = messagesBox.scrollHeight;
+            lessons.forEach((lesson, index) => {
+                const node = document.createElement("div");
+                node.className = "map-node";
+                let btnClass = lesson.status === "completed" ? "duo-btn-green" : (lesson.status === "active" ? "duo-btn-primary" : "duo-btn-gray");
 
-            // ИИ жауабы (имитация)
+                node.innerHTML = `
+                    <button class="node-btn ${btnClass}" onclick="${lesson.status !== 'locked' ? `openLessonModal(${lesson.id})` : ''}">
+                        ${lesson.status === 'completed' ? '✓' : lesson.icon}
+                    </button>
+                    <span class="node-label">${lesson.title}</span>
+                `;
+                container.appendChild(node);
+
+                if (index < lessons.length - 1) {
+                    const conn = document.createElement("div");
+                    conn.className = `map-connector ${lesson.status === 'completed' ? 'active' : ''}`;
+                    container.appendChild(conn);
+                }
+            });
+        }
+
+        function openLessonModal(id) {
+            const lessons = remoteData.lessons || defaultLessons;
+            const lesson = lessons.find(l => l.id === id);
+            window.currentLesson = lesson;
+
+            document.getElementById("modalTitle").innerText = lesson.title;
+            document.getElementById("modalDesc").innerText = lesson.desc;
+            document.getElementById("modalTaskPrompt").innerText = lesson.taskPrompt;
+            document.getElementById("modalVideoLink").href = lesson.videoUrl;
+            document.getElementById("projectCode").value = "";
+            document.getElementById("projectMedia").value = "";
+
+            const currentUser = JSON.parse(localStorage.getItem("s7_current_user"));
+            const subs = remoteData.submissions || [];
+            const hasSubmitted = subs.some(s => 
+                s.studentEmail.toLowerCase() === currentUser.email.toLowerCase() && s.lessonTitle === lesson.title
+            );
+
+            const form = document.getElementById("submissionForm");
+            const msg = document.getElementById("alreadySubmittedMsg");
+
+            if (hasSubmitted) {
+                form.style.display = "none";
+                msg.style.display = "block";
+            } else {
+                form.style.display = "block";
+                msg.style.display = "none";
+            }
+
+            document.getElementById("lessonModal").style.display = "flex";
+        }
+
+        function closeLessonModal() { document.getElementById("lessonModal").style.display = "none"; }
+
+        function submitProject(e) {
+            e.preventDefault();
+            const currentUser = JSON.parse(localStorage.getItem("s7_current_user"));
+            if (!remoteData.submissions) remoteData.submissions = [];
+            
+            remoteData.submissions.push({
+                id: Date.now(),
+                studentName: currentUser.name,
+                studentEmail: currentUser.email.toLowerCase(),
+                lessonTitle: window.currentLesson.title,
+                code: document.getElementById("projectCode").value,
+                media: document.getElementById("projectMedia").value,
+                status: "Күтілуде"
+            });
+
+            syncToFirebase();
+            alert("🎉 Тапсырма менторға сәтті жіберілді!");
+            closeLessonModal();
+        }
+
+        function renderMentorTable() {
+            const tbody = document.getElementById("mentorTableBody");
+            if (!tbody) return;
+            tbody.innerHTML = "";
+
+            const subs = remoteData.submissions || [];
+            if (subs.length === 0) {
+                tbody.innerHTML = "<tr><td colspan='5' style='text-align:center; color:#94a3b8;'>Әзірге тексерілетін тапсырмалар жоқ</td></tr>";
+                return;
+            }
+
+            subs.forEach(item => {
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
+                    <td><strong>${item.studentName}</strong></td>
+                    <td>${item.lessonTitle}</td>
+                    <td><a href="${item.media}" target="_blank" style="color: #38bdf8;">Wokwi / Сілтеме</a></td>
+                    <td><button class="duo-btn duo-btn-primary" style="padding: 4px 8px; font-size: 12px;" onclick="viewStudentCode('${item.studentName}', '${item.lessonTitle}', ${item.id})">📄 Көру</button></td>
+                    <td>${item.status === 'Күтілуде' ? `<button class="duo-btn duo-btn-green" style="padding: 4px 8px; font-size: 12px;" onclick="approveSub(${item.id})">Қабылдау</button>` : '✅ Қабылданды'}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function viewStudentCode(name, lesson, id) {
+            const sub = (remoteData.submissions || []).find(s => s.id === id);
+            if (sub) {
+                document.getElementById("codeModalStudentName").innerText = "👨‍🎓 " + name;
+                document.getElementById("codeModalLessonTitle").innerText = "📌 " + lesson;
+                document.getElementById("codeModalContent").innerText = sub.code;
+                document.getElementById("viewCodeModal").style.display = "flex";
+            }
+        }
+
+        function closeViewCodeModal() { document.getElementById("viewCodeModal").style.display = "none"; }
+
+        function approveSub(id) {
+            const sub = (remoteData.submissions || []).find(s => s.id === id);
+            if (sub) {
+                sub.status = "Қабылданды";
+
+                // Студентке XP қосу
+                const users = remoteData.users || [];
+                const student = users.find(u => u.email.toLowerCase() === sub.studentEmail.toLowerCase());
+                if (student) {
+                    student.xp = (student.xp || 0) + 50;
+                    localStorage.setItem("s7_current_user", JSON.stringify(student));
+                }
+
+                const lessons = remoteData.lessons || defaultLessons;
+                const idx = lessons.findIndex(l => l.title === sub.lessonTitle);
+                if (idx !== -1) {
+                    lessons[idx].status = "completed";
+                    if (idx + 1 < lessons.length) lessons[idx + 1].status = "active";
+                }
+
+                syncToFirebase();
+                alert("✅ Тапсырма қабылданды және студентке 50 XP берілді!");
+                renderMentorTable();
+            }
+        }
+
+        function sendAiMessage() {
+            const input = document.getElementById("aiInput");
+            const text = input.value.trim();
+            if (!text) return;
+
+            if (!remoteData.aiChatHistory) remoteData.aiChatHistory = [];
+            remoteData.aiChatHistory.push({ sender: "user", text: text });
+            input.value = "";
+            renderAiChatHistory();
+            syncToFirebase();
+
             setTimeout(() => {
-                messagesBox.innerHTML += `<div><b style="color: var(--primary);">ИИ:</b> Жобаңыздың бұл бөлігі жақсы орындалған. Тағы не көмек керек?</div>`;
-                messagesBox.scrollTop = messagesBox.scrollHeight;
-            }, 600);
+                let reply = "Сәлем! Робототехника және Arduino бойынша сұрақтарыңызға көмектесуге дайынмын.";
+                const lower = text.toLowerCase();
+                if (lower.includes("led") || lower.includes("диод")) {
+                    reply = "Диодты қосу үшін pinMode(pin, OUTPUT) және digitalWrite(pin, HIGH) пайдаланыңыз.";
+                } else if (lower.includes("серво") || lower.includes("servo")) {
+                    reply = "Сервомоторды басқару үшін <Servo.h> кітапханасын қосып, myservo.write(90) функциясын қолданыңыз.";
+                } else if (lower.includes("датчик") || lower.includes("сенсор")) {
+                    reply = "Сенсор мәндерін оқу үшін analogRead() немесе digitalRead() функциялары қолданылады.";
+                }
+                remoteData.aiChatHistory.push({ sender: "ai", text: reply });
+                syncToFirebase();
+                renderAiChatHistory();
+            }, 500);
+        }
+
+        function renderAiChatHistory() {
+            const chatBox = document.getElementById("aiChatMessages");
+            if (!chatBox) return;
+            chatBox.innerHTML = "";
+            (remoteData.aiChatHistory || []).forEach(msg => {
+                const div = document.createElement("div");
+                div.style.padding = "8px 12px";
+                div.style.borderRadius = "8px";
+                if (msg.sender === "user") {
+                    div.style.background = "#0284c7";
+                    div.style.color = "white";
+                    div.style.textAlign = "right";
+                    div.style.marginLeft = "20px";
+                } else {
+                    div.style.background = "#334155";
+                    div.style.color = "#e2e8f0";
+                    div.style.textAlign = "left";
+                    div.style.marginRight = "20px";
+                }
+                div.innerText = msg.text;
+                chatBox.appendChild(div);
+            });
+            chatBox.scrollTop = chatBox.scrollHeight;
         }
     </script>
 </body>
