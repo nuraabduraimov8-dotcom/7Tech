@@ -31,6 +31,10 @@
         
         .flex-row { display: flex; gap: 10px; }
         
+        /* Stats Bar */
+        .stats-bar { display: flex; justify-content: space-around; background: #0f172a; padding: 10px; border-radius: 12px; border: 1px solid #334155; margin-bottom: 15px; }
+        .stat-item { font-size: 15px; font-weight: 600; color: #cbd5e1; display: flex; align-items: center; gap: 6px; }
+
         /* Lesson Map */
         .map-container { display: flex; flex-direction: column; align-items: center; gap: 15px; padding: 20px 0; }
         .map-node { display: flex; flex-direction: column; align-items: center; gap: 5px; }
@@ -67,7 +71,7 @@
             <form id="loginForm" onsubmit="handleLogin(event)">
                 <div class="form-group">
                     <label>Email немесе Телефон</label>
-                    <input type="text" id="loginIdentifier" required placeholder="example@mail.com">
+                    <input type="text" id="loginIdentifier" required placeholder="example@mail.com немесе +7...">
                 </div>
                 <div class="form-group">
                     <label>Пароль</label>
@@ -112,7 +116,12 @@
                     <h2>Қош келдіңіз, <span id="studentNameDisplay"></span>! 👨‍🎓</h2>
                     <button class="duo-btn duo-btn-gray" style="width: auto; padding: 8px 14px;" onclick="logout()">Шығу</button>
                 </div>
-                <p style="color: #94a3b8; margin-bottom: 15px;">Жинақталған XP: <strong id="xpCount" style="color: #38bdf8;">0</strong></p>
+
+                <!-- STREAK & XP STATS BAR -->
+                <div class="stats-bar">
+                    <div class="stat-item">🔥 Streak: <strong id="streakCount" style="color: #f97316;">0 күн</strong></div>
+                    <div class="stat-item">⭐ XP: <strong id="xpCount" style="color: #38bdf8;">0</strong></div>
+                </div>
                 
                 <h3>Сабақтар картасы</h3>
                 <div class="map-container" id="lessonsContainer"></div>
@@ -123,7 +132,7 @@
                 <h3>🤖 ИИ Ассистент (Робототехника көмекшісі)</h3>
                 <div class="ai-chat-box" id="aiChatMessages"></div>
                 <div class="flex-row">
-                    <input type="text" id="aiInput" placeholder="Сұрағыңызды жазыңыз (мысалы: Сервомотор қалай қосылады?)..." style="flex: 1;">
+                    <input type="text" id="aiInput" placeholder="Сұрағыңызды жазыңыз..." style="flex: 1;">
                     <button class="duo-btn duo-btn-primary" style="width: 100px;" onclick="sendAiMessage()">Жіберу</button>
                 </div>
             </div>
@@ -202,7 +211,7 @@
     </div>
 
     <script>
-        // Firebase Configuration (Өз кілттеріңізді қойыңыз)
+        // Firebase Configuration
         const firebaseConfig = {
             apiKey: "СІЗДІҢ_API_КІЛТІҢІЗ",
             authDomain: "СІЗДІҢ_ДОМЕЙН.firebaseapp.com",
@@ -224,50 +233,94 @@
             { id: 5, title: "5. Ultrasonic Sensor", desc: "Қашықтықты өлшеу.", icon: "📏", status: "locked", taskPrompt: "HC-SR04 ультрадыбыстық сенсоры арқылы қашықтықты өлшеп, Serial-ға шығаратын код жазыңыз.", videoUrl: "https://www.youtube.com/results?search_query=arduino+ultrasonic+sensor" }
         ];
 
-        let appState = {
-            users: [],          
-            currentUser: null,  
-            streak: 1,
-            lastLoginDate: null,
-            xp: 0,
+        let remoteData = {
+            users: [],
             lessons: defaultLessons,
             submissions: [],
             aiChatHistory: []
         };
 
-        function saveData() {
-            db.ref('s7_lms_db').set(appState);
-        }
-
         window.onload = function() {
             db.ref('s7_lms_db').on('value', (snapshot) => {
                 const data = snapshot.val();
                 if (data) {
-                    appState = data;
+                    remoteData = data;
+                    if (!remoteData.lessons) remoteData.lessons = defaultLessons;
+                    if (!remoteData.users) remoteData.users = [];
+                    if (!remoteData.submissions) remoteData.submissions = [];
                 } else {
-                    saveData();
+                    syncToFirebase();
                 }
                 checkSession();
             });
         };
 
+        function syncToFirebase() {
+            db.ref('s7_lms_db').set(remoteData);
+        }
+
+        // Streak есептеу және жаңарту логикасы
+        function updateStreak(user) {
+            const todayStr = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+            if (!user.lastActiveDate) {
+                user.streak = 1;
+                user.lastActiveDate = todayStr;
+            } else {
+                if (user.lastActiveDate !== todayStr) {
+                    const lastDate = new Date(user.lastActiveDate);
+                    const currentDate = new Date(todayStr);
+                    const diffTime = Math.abs(currentDate - lastDate);
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+                    if (diffDays === 1) {
+                        user.streak = (user.streak || 0) + 1;
+                    } else if (diffDays > 1) {
+                        user.streak = 1; // 1 күннен артық өтсе streak үзіледі
+                    }
+                    user.lastActiveDate = todayStr;
+                }
+            }
+
+            // Firebase-дегі қолданушы дерегін жаңарту
+            const users = remoteData.users || [];
+            const idx = users.findIndex(u => u.email.toLowerCase() === user.email.toLowerCase());
+            if (idx !== -1) {
+                users[idx] = user;
+                syncToFirebase();
+            }
+            localStorage.setItem("s7_current_user", JSON.stringify(user));
+        }
+
         function checkSession() {
-            const user = appState.currentUser;
+            const currentUserJson = localStorage.getItem("s7_current_user");
+            let currentUser = currentUserJson ? JSON.parse(currentUserJson) : null;
+
             document.getElementById("authContainer").style.display = "none";
             document.getElementById("studentApp").style.display = "none";
             document.getElementById("mentorApp").style.display = "none";
 
-            if (!user) {
+            if (!currentUser) {
                 document.getElementById("authContainer").style.display = "block";
-            } else if (user.role === "student") {
+            } else if (currentUser.role === "student") {
+                // Сервердегі деректермен актуальді күйге келтіру
+                const users = remoteData.users || [];
+                const freshUser = users.find(u => u.email.toLowerCase() === currentUser.email.toLowerCase());
+                if (freshUser) {
+                    currentUser = freshUser;
+                    localStorage.setItem("s7_current_user", JSON.stringify(currentUser));
+                }
+
+                updateStreak(currentUser);
+
                 document.getElementById("studentApp").style.display = "block";
-                document.getElementById("studentNameDisplay").innerText = user.name;
-                document.getElementById("xpCount").innerText = appState.xp || 0;
+                document.getElementById("studentNameDisplay").innerText = currentUser.name;
+                document.getElementById("xpCount").innerText = currentUser.xp || 0;
+                document.getElementById("streakCount").innerText = (currentUser.streak || 1) + " күн";
                 renderLessons();
                 renderAiChatHistory();
-            } else if (user.role === "mentor") {
+            } else if (currentUser.role === "mentor") {
                 document.getElementById("mentorApp").style.display = "block";
-                document.getElementById("mentorNameDisplay").innerText = user.name;
+                document.getElementById("mentorNameDisplay").innerText = currentUser.name;
                 renderMentorTable();
             }
         }
@@ -294,17 +347,21 @@
             const phone = document.getElementById("regPhone").value.trim();
             const password = document.getElementById("regPassword").value.trim();
 
-            if (appState.users && appState.users.some(u => u.email.toLowerCase() === email)) {
+            if (!remoteData.users) remoteData.users = [];
+
+            if (remoteData.users.some(u => u.email.toLowerCase() === email)) {
                 alert("⚠️ Бұл email бұрын тіркелген!");
                 return;
             }
 
-            const newUser = { role, name, email, phone, password };
-            if (!appState.users) appState.users = [];
-            appState.users.push(newUser);
-            appState.currentUser = newUser;
-            saveData();
+            const todayStr = new Date().toISOString().slice(0, 10);
+            const newUser = { role, name, email, phone, password, xp: 0, streak: 1, lastActiveDate: todayStr };
+            remoteData.users.push(newUser);
+            syncToFirebase();
+
+            localStorage.setItem("s7_current_user", JSON.stringify(newUser));
             alert("🎉 Тіркелу сәтті өтті!");
+            checkSession();
         }
 
         function handleLogin(e) {
@@ -312,21 +369,22 @@
             const id = document.getElementById("loginIdentifier").value.trim().toLowerCase();
             const pass = document.getElementById("loginPassword").value.trim();
 
-            const user = appState.users ? appState.users.find(u => 
+            const users = remoteData.users || [];
+            const user = users.find(u => 
                 (u.email.toLowerCase() === id || u.phone.trim() === id) && u.password === pass
-            ) : null;
+            );
 
             if (user) {
-                appState.currentUser = user;
-                saveData();
+                localStorage.setItem("s7_current_user", JSON.stringify(user));
+                checkSession();
             } else {
-                alert("❌ Логин немесе пароль қате!");
+                alert("❌ Логин немесе пароль қате немесе аккаунт табылмады!");
             }
         }
 
         function logout() {
-            appState.currentUser = null;
-            saveData();
+            localStorage.removeItem("s7_current_user");
+            checkSession();
         }
 
         function renderLessons() {
@@ -334,9 +392,9 @@
             if (!container) return;
             container.innerHTML = "";
 
-            if (!appState.lessons) appState.lessons = defaultLessons;
+            const lessons = remoteData.lessons || defaultLessons;
 
-            appState.lessons.forEach((lesson, index) => {
+            lessons.forEach((lesson, index) => {
                 const node = document.createElement("div");
                 node.className = "map-node";
                 let btnClass = lesson.status === "completed" ? "duo-btn-green" : (lesson.status === "active" ? "duo-btn-primary" : "duo-btn-gray");
@@ -349,7 +407,7 @@
                 `;
                 container.appendChild(node);
 
-                if (index < appState.lessons.length - 1) {
+                if (index < lessons.length - 1) {
                     const conn = document.createElement("div");
                     conn.className = `map-connector ${lesson.status === 'completed' ? 'active' : ''}`;
                     container.appendChild(conn);
@@ -358,16 +416,21 @@
         }
 
         function openLessonModal(id) {
-            const lesson = appState.lessons.find(l => l.id === id);
-            appState.currentLesson = lesson;
+            const lessons = remoteData.lessons || defaultLessons;
+            const lesson = lessons.find(l => l.id === id);
+            window.currentLesson = lesson;
+
             document.getElementById("modalTitle").innerText = lesson.title;
             document.getElementById("modalDesc").innerText = lesson.desc;
             document.getElementById("modalTaskPrompt").innerText = lesson.taskPrompt;
             document.getElementById("modalVideoLink").href = lesson.videoUrl;
             document.getElementById("projectCode").value = "";
+            document.getElementById("projectMedia").value = "";
 
-            const hasSubmitted = appState.submissions && appState.submissions.some(s => 
-                s.studentEmail.toLowerCase() === appState.currentUser.email.toLowerCase() && s.lessonTitle === lesson.title
+            const currentUser = JSON.parse(localStorage.getItem("s7_current_user"));
+            const subs = remoteData.submissions || [];
+            const hasSubmitted = subs.some(s => 
+                s.studentEmail.toLowerCase() === currentUser.email.toLowerCase() && s.lessonTitle === lesson.title
             );
 
             const form = document.getElementById("submissionForm");
@@ -388,19 +451,20 @@
 
         function submitProject(e) {
             e.preventDefault();
-            if (!appState.submissions) appState.submissions = [];
+            const currentUser = JSON.parse(localStorage.getItem("s7_current_user"));
+            if (!remoteData.submissions) remoteData.submissions = [];
             
-            appState.submissions.push({
+            remoteData.submissions.push({
                 id: Date.now(),
-                studentName: appState.currentUser.name,
-                studentEmail: appState.currentUser.email.toLowerCase(),
-                lessonTitle: appState.currentLesson.title,
+                studentName: currentUser.name,
+                studentEmail: currentUser.email.toLowerCase(),
+                lessonTitle: window.currentLesson.title,
                 code: document.getElementById("projectCode").value,
                 media: document.getElementById("projectMedia").value,
                 status: "Күтілуде"
             });
 
-            saveData();
+            syncToFirebase();
             alert("🎉 Тапсырма менторға сәтті жіберілді!");
             closeLessonModal();
         }
@@ -410,9 +474,9 @@
             if (!tbody) return;
             tbody.innerHTML = "";
 
-            const subs = appState.submissions || [];
+            const subs = remoteData.submissions || [];
             if (subs.length === 0) {
-                tbody.innerHTML = "<tr><td colspan='5' style='text-align:center; color:#94a3b8;'>Әзірге тапсырмалар жоқ</td></tr>";
+                tbody.innerHTML = "<tr><td colspan='5' style='text-align:center; color:#94a3b8;'>Әзірге тексерілетін тапсырмалар жоқ</td></tr>";
                 return;
             }
 
@@ -430,7 +494,7 @@
         }
 
         function viewStudentCode(name, lesson, id) {
-            const sub = (appState.submissions || []).find(s => s.id === id);
+            const sub = (remoteData.submissions || []).find(s => s.id === id);
             if (sub) {
                 document.getElementById("codeModalStudentName").innerText = "👨‍🎓 " + name;
                 document.getElementById("codeModalLessonTitle").innerText = "📌 " + lesson;
@@ -442,19 +506,28 @@
         function closeViewCodeModal() { document.getElementById("viewCodeModal").style.display = "none"; }
 
         function approveSub(id) {
-            const sub = (appState.submissions || []).find(s => s.id === id);
+            const sub = (remoteData.submissions || []).find(s => s.id === id);
             if (sub) {
                 sub.status = "Қабылданды";
-                appState.xp = (appState.xp || 0) + 50;
 
-                const idx = appState.lessons.findIndex(l => l.title === sub.lessonTitle);
-                if (idx !== -1) {
-                    appState.lessons[idx].status = "completed";
-                    if (idx + 1 < appState.lessons.length) appState.lessons[idx + 1].status = "active";
+                // Студентке XP қосу
+                const users = remoteData.users || [];
+                const student = users.find(u => u.email.toLowerCase() === sub.studentEmail.toLowerCase());
+                if (student) {
+                    student.xp = (student.xp || 0) + 50;
+                    localStorage.setItem("s7_current_user", JSON.stringify(student));
                 }
 
-                saveData();
-                alert("✅ Тапсырма қабылданды!");
+                const lessons = remoteData.lessons || defaultLessons;
+                const idx = lessons.findIndex(l => l.title === sub.lessonTitle);
+                if (idx !== -1) {
+                    lessons[idx].status = "completed";
+                    if (idx + 1 < lessons.length) lessons[idx + 1].status = "active";
+                }
+
+                syncToFirebase();
+                alert("✅ Тапсырма қабылданды және студентке 50 XP берілді!");
+                renderMentorTable();
             }
         }
 
@@ -463,24 +536,24 @@
             const text = input.value.trim();
             if (!text) return;
 
-            if (!appState.aiChatHistory) appState.aiChatHistory = [];
-            appState.aiChatHistory.push({ sender: "user", text: text });
+            if (!remoteData.aiChatHistory) remoteData.aiChatHistory = [];
+            remoteData.aiChatHistory.push({ sender: "user", text: text });
             input.value = "";
             renderAiChatHistory();
-            saveData();
+            syncToFirebase();
 
             setTimeout(() => {
-                let reply = "Сәлем! Робототехника және Arduino сұрақтарыңызға көмектесуге дайынмын.";
+                let reply = "Сәлем! Робототехника және Arduino бойынша сұрақтарыңызға көмектесуге дайынмын.";
                 const lower = text.toLowerCase();
                 if (lower.includes("led") || lower.includes("диод")) {
                     reply = "Диодты қосу үшін pinMode(pin, OUTPUT) және digitalWrite(pin, HIGH) пайдаланыңыз.";
                 } else if (lower.includes("серво") || lower.includes("servo")) {
-                    reply = "Сервомотор үшін <Servo.h> кітапханасын қосып, myservo.write(90) арқылы бұра аласыз.";
+                    reply = "Сервомоторды басқару үшін <Servo.h> кітапханасын қосып, myservo.write(90) функциясын қолданыңыз.";
                 } else if (lower.includes("датчик") || lower.includes("сенсор")) {
-                    reply = "Сенсорлардан мәлімет алу үшін analogRead() немесе digitalRead() қолданылады.";
+                    reply = "Сенсор мәндерін оқу үшін analogRead() немесе digitalRead() функциялары қолданылады.";
                 }
-                appState.aiChatHistory.push({ sender: "ai", text: reply });
-                saveData();
+                remoteData.aiChatHistory.push({ sender: "ai", text: reply });
+                syncToFirebase();
                 renderAiChatHistory();
             }, 500);
         }
@@ -489,7 +562,7 @@
             const chatBox = document.getElementById("aiChatMessages");
             if (!chatBox) return;
             chatBox.innerHTML = "";
-            (appState.aiChatHistory || []).forEach(msg => {
+            (remoteData.aiChatHistory || []).forEach(msg => {
                 const div = document.createElement("div");
                 div.style.padding = "8px 12px";
                 div.style.borderRadius = "8px";
