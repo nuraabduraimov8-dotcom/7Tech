@@ -1,4 +1,3 @@
-// 8 ТОЛЫҚ САБАҚ ТІЗІМІ
 const defaultLessons = [
     { id: 1, title: "1. LED Blink", desc: "13-пиндегі диодты жыпылықтату.", icon: "💡", status: "active", code: "void setup() {\n  pinMode(13, OUTPUT);\n}\nvoid loop() {\n  digitalWrite(13, HIGH);\n  delay(1000);\n  digitalWrite(13, LOW);\n  delay(1000);\n}" },
     { id: 2, title: "2. Button & LED", desc: "Батырма арқылы диодты қосу.", icon: "🔘", status: "locked", code: "int btn = 2, led = 13;\nvoid setup() {\n  pinMode(led, OUTPUT);\n  pinMode(btn, INPUT);\n}\nvoid loop() {\n  if(digitalRead(btn) == HIGH) digitalWrite(led, HIGH);\n  else digitalWrite(led, LOW);\n}" },
@@ -10,7 +9,6 @@ const defaultLessons = [
     { id: 8, title: "8. TDS Water Sensor", desc: "Су сапасын (TDS) өлшеу сенсоры.", icon: "💧", status: "locked", code: "void setup() { Serial.begin(9600); }\nvoid loop() {\n  int val = analogRead(A0);\n  Serial.print(\"TDS Value: \"); Serial.println(val);\n  delay(1000);\n}" }
 ];
 
-// База нұсқасын v11-ге жаңартамыз
 let appState = JSON.parse(localStorage.getItem("s7_lms_db_v11")) || {
     users: [],          
     currentUser: null,  
@@ -65,7 +63,6 @@ function switchAuthMode(mode) {
     }
 }
 
-// 1. ТІРКЕЛУ
 function handleRegister(e) {
     e.preventDefault();
     const role = document.getElementById("regRole").value;
@@ -74,7 +71,6 @@ function handleRegister(e) {
     const phone = document.getElementById("regPhone").value.trim();
     const password = document.getElementById("regPassword").value.trim();
 
-    // Егер мұндай email бар болса
     if (appState.users.some(u => u.email.toLowerCase() === email)) {
         alert("⚠️ Бұл email бұрын тіркелген!");
         return;
@@ -88,13 +84,11 @@ function handleRegister(e) {
     checkSession();
 }
 
-// 2. АВТОРИЗАЦИЯ (КІРУ)
 function handleLogin(e) {
     e.preventDefault();
     const id = document.getElementById("loginIdentifier").value.trim().toLowerCase();
     const pass = document.getElementById("loginPassword").value.trim();
 
-    // Телефон немесе Email арқылы толық дәл іздеу
     const user = appState.users.find(u => 
         (u.email.toLowerCase() === id || u.phone.trim() === id) && u.password === pass
     );
@@ -108,12 +102,10 @@ function handleLogin(e) {
     }
 }
 
-// 3. МЕНТОРҒА ЗАПРОС ЖІБЕРУ (ДӘЛ ІЗДЕУ ТҮЗЕТІЛДІ)
 function sendMentorRequest(e) {
     e.preventDefault();
     const mentorEmail = document.getElementById("targetMentorEmail").value.trim().toLowerCase();
 
-    // Электронды поштаны кіші әріптермен толық іздеу
     const mentor = appState.users.find(u => u.email.toLowerCase() === mentorEmail && u.role === 'mentor');
 
     if (!mentor) {
@@ -121,7 +113,6 @@ function sendMentorRequest(e) {
         return;
     }
 
-    // Қайталап запрос жібермеуін тексеру
     const existingReq = appState.mentorRequests.find(r => r.studentEmail.toLowerCase() === appState.currentUser.email.toLowerCase());
     if (existingReq) {
         alert("⚠️ Сіз бұған дейін запрос жіберіп қойғансыз!");
@@ -152,7 +143,6 @@ function renderStudentMentorStatus() {
     }
 }
 
-// 4. МЕНТОР КАБИНЕТІНДЕ ЗАПРОСТАРДЫ КӨРСЕТУ ЖӘНЕ ҚАБЫЛДАУ
 function renderMentorRequests() {
     const list = document.getElementById("mentorRequestsList");
     list.innerHTML = "";
@@ -189,7 +179,6 @@ function acceptStudent(studentEmail, reqId) {
     alert("✅ Студент сәтті қабылданды!");
 }
 
-// 5. СТРИК ЖӘНЕ ШЫҒУ
 function updateStreak() {
     const today = new Date().toDateString();
     const lastLogin = appState.lastLoginDate;
@@ -212,7 +201,6 @@ function logout() {
     location.reload();
 }
 
-// 6. САБАҚТАРДЫ СУРЕТТЕУ
 function renderLessons() {
     const container = document.getElementById("lessonsContainer");
     container.innerHTML = "";
@@ -303,14 +291,16 @@ function submitProject(e) {
     closeLessonModal();
 }
 
-// 7. МЕНТОР ТАБЛИЦАСЫ ЖӘНЕ КОД КӨРУ
 function renderMentorTable() {
     const tbody = document.getElementById("mentorTableBody");
     tbody.innerHTML = "";
 
-    const subs = appState.submissions.filter(s => 
-        s.mentorEmail && s.mentorEmail.toLowerCase() === appState.currentUser.email.toLowerCase()
-    );
+    const subs = appState.submissions;
+
+    if (subs.length === 0) {
+        tbody.innerHTML = "<tr><td colspan='5' style='text-align:center; color:#94a3b8;'>Әзірге тексерілетін тапсырмалар жоқ</td></tr>";
+        return;
+    }
 
     subs.forEach(item => {
         const tr = document.createElement("tr");
