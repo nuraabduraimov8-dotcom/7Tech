@@ -172,7 +172,12 @@ function acceptStudent(studentEmail, reqId) {
     if (req) req.status = "Қабылданды";
 
     const student = appState.users.find(u => u.email.toLowerCase() === studentEmail.toLowerCase());
-    if (student) student.mentorEmail = appState.currentUser.email.toLowerCase();
+    if (student) {
+        student.mentorEmail = appState.currentUser.email.toLowerCase();
+        if (appState.currentUser && appState.currentUser.email.toLowerCase() === student.email.toLowerCase()) {
+            appState.currentUser.mentorEmail = student.mentorEmail;
+        }
+    }
 
     saveData();
     renderMentorRequests();
@@ -275,11 +280,19 @@ function testCodeRun() {
 function submitProject(e) {
     e.preventDefault();
 
+    let currentMentor = appState.currentUser.mentorEmail;
+    if (!currentMentor) {
+        const studentReq = appState.mentorRequests.find(r => r.studentEmail.toLowerCase() === appState.currentUser.email.toLowerCase() && r.status === "Қабылданды");
+        if (studentReq) {
+            currentMentor = studentReq.mentorEmail;
+        }
+    }
+
     appState.submissions.push({
         id: Date.now(),
         studentName: appState.currentUser.name,
         studentEmail: appState.currentUser.email.toLowerCase(),
-        mentorEmail: appState.currentUser.mentorEmail ? appState.currentUser.mentorEmail.toLowerCase() : null,
+        mentorEmail: currentMentor ? currentMentor.toLowerCase() : null,
         lessonTitle: appState.currentLesson.title,
         code: document.getElementById("projectCode").value,
         media: document.getElementById("projectMedia").value,
@@ -295,7 +308,11 @@ function renderMentorTable() {
     const tbody = document.getElementById("mentorTableBody");
     tbody.innerHTML = "";
 
-    const subs = appState.submissions;
+    const mentorEmail = appState.currentUser.email.toLowerCase();
+    
+    const subs = appState.submissions.filter(s => {
+        return !s.mentorEmail || s.mentorEmail.toLowerCase() === mentorEmail;
+    });
 
     if (subs.length === 0) {
         tbody.innerHTML = "<tr><td colspan='5' style='text-align:center; color:#94a3b8;'>Әзірге тексерілетін тапсырмалар жоқ</td></tr>";
