@@ -63,54 +63,79 @@ function saveData() {
 
 function checkSession() {
     const user = appState.currentUser;
-    document.getElementById("authContainer").style.display = "none";
-    document.getElementById("studentApp").style.display = "none";
-    document.getElementById("mentorApp").style.display = "none";
+    const authContainer = document.getElementById("authContainer");
+    const studentApp = document.getElementById("studentApp");
+    const mentorApp = document.getElementById("mentorApp");
+
+    if (authContainer) authContainer.style.display = "none";
+    if (studentApp) studentApp.style.display = "none";
+    if (mentorApp) mentorApp.style.display = "none";
 
     if (!user) {
-        document.getElementById("authContainer").style.display = "flex";
+        if (authContainer) authContainer.style.display = "flex";
     } else if (user.role === "student") {
         updateStreak();
-        document.getElementById("studentApp").style.display = "block";
-        document.getElementById("studentNameDisplay").innerText = user.name;
-        document.getElementById("xpCount").innerText = appState.xp;
+        if (studentApp) studentApp.style.display = "block";
+        const nameDisp = document.getElementById("studentNameDisplay");
+        const xpDisp = document.getElementById("xpCount");
+        if (nameDisp) nameDisp.innerText = user.name;
+        if (xpDisp) xpDisp.innerText = appState.xp;
         renderLessons();
     } else if (user.role === "mentor") {
-        document.getElementById("mentorApp").style.display = "block";
-        document.getElementById("mentorNameDisplay").innerText = user.name;
+        if (mentorApp) mentorApp.style.display = "block";
+        const mentorNameDisp = document.getElementById("mentorNameDisplay");
+        if (mentorNameDisp) mentorNameDisp.innerText = user.name;
         renderMentorTable();
     }
 }
 
 function switchAuthMode(mode) {
+    const loginForm = document.getElementById("loginForm");
+    const regForm = document.getElementById("regForm");
+    const loginTabBtn = document.getElementById("loginTabBtn");
+    const regTabBtn = document.getElementById("regTabBtn");
+
     if (mode === 'login') {
-        document.getElementById("loginForm").style.display = "block";
-        document.getElementById("regForm").style.display = "none";
-        document.getElementById("loginTabBtn").className = "duo-btn duo-btn-primary";
-        document.getElementById("regTabBtn").className = "duo-btn duo-btn-gray";
+        if (loginForm) loginForm.style.display = "block";
+        if (regForm) regForm.style.display = "none";
+        if (loginTabBtn) loginTabBtn.className = "duo-btn duo-btn-primary";
+        if (regTabBtn) regTabBtn.className = "duo-btn duo-btn-gray";
     } else {
-        document.getElementById("loginForm").style.display = "none";
-        document.getElementById("regForm").style.display = "block";
-        document.getElementById("loginTabBtn").className = "duo-btn duo-btn-gray";
-        document.getElementById("regTabBtn").className = "duo-btn duo-btn-primary";
+        if (loginForm) loginForm.style.display = "none";
+        if (regForm) regForm.style.display = "block";
+        if (loginTabBtn) loginTabBtn.className = "duo-btn duo-btn-gray";
+        if (regTabBtn) regTabBtn.className = "duo-btn duo-btn-primary";
     }
 }
 
-// 1. ТІРКЕЛУ (ҚАЙТАЛАНУДАН ҚОРҒАЛҒАН)
+// 1. ТІРКЕЛУ (ҚАТЕЛЕР ЖОЙЫЛДЫ, АСИНХРОНДЫ ТҮРДЕ ЖҰМЫС ІСТЕЙДІ)
 async function handleRegister(e) {
     e.preventDefault();
-    const role = document.getElementById("regRole").value;
-    const name = document.getElementById("regName").value.trim();
-    const email = document.getElementById("regEmail").value.trim().toLowerCase();
-    const phone = document.getElementById("regPhone").value.trim().replace(/\s+/g, '');
-    const password = document.getElementById("regPassword").value.trim();
+    
+    const roleElem = document.getElementById("regRole");
+    const nameElem = document.getElementById("regName");
+    const emailElem = document.getElementById("regEmail");
+    const phoneElem = document.getElementById("regPhone");
+    const passElem = document.getElementById("regPassword");
 
+    if (!roleElem || !nameElem || !emailElem || !passElem) {
+        alert("⚠️ Форма элементтері толық табылмады!");
+        return;
+    }
+
+    const role = roleElem.value;
+    const name = nameElem.value.trim();
+    const email = emailElem.value.trim().toLowerCase();
+    const phone = phoneElem ? phoneElem.value.trim().replace(/\s+/g, '') : "";
+    const password = passElem.value.trim();
+
+    // Firebase-тен ең соңғы деректерді алу
     const snapshot = await db.ref("s7_global_database/users").once("value");
     const rawData = snapshot.val();
     let currentUsers = Array.isArray(rawData) ? rawData : (rawData ? Object.values(rawData) : []);
 
     const emailExists = currentUsers.some(u => u && (u.email || "").toLowerCase() === email);
-    const phoneExists = currentUsers.some(u => u && (u.phone || "").replace(/\s+/g, '') === phone);
+    const phoneExists = phone ? currentUsers.some(u => u && (u.phone || "").replace(/\s+/g, '') === phone) : false;
 
     if (emailExists) {
         alert("⚠️ Бұл email арқылы аккаунт бұрын тіркелген!");
@@ -134,8 +159,13 @@ async function handleRegister(e) {
 // 2. КІРУ (АВТОРИЗАЦИЯ)
 async function handleLogin(e) {
     e.preventDefault();
-    const id = document.getElementById("loginIdentifier").value.trim().toLowerCase().replace(/\s+/g, '');
-    const pass = document.getElementById("loginPassword").value.trim();
+    const identifierElem = document.getElementById("loginIdentifier");
+    const passElem = document.getElementById("loginPassword");
+
+    if (!identifierElem || !passElem) return;
+
+    const id = identifierElem.value.trim().toLowerCase().replace(/\s+/g, '');
+    const pass = passElem.value.trim();
 
     const snapshot = await db.ref("s7_global_database/users").once("value");
     const rawData = snapshot.val();
@@ -170,7 +200,8 @@ function updateStreak() {
     }
 
     appState.lastLoginDate = today;
-    document.getElementById("streakCount").innerText = appState.streak;
+    const streakElem = document.getElementById("streakCount");
+    if (streakElem) streakElem.innerText = appState.streak;
 }
 
 function logout() {
@@ -182,6 +213,7 @@ function logout() {
 // 4. САБАҚТАР ЖӘНЕ ТАПСЫРМА ЖІБЕРУ
 function renderLessons() {
     const container = document.getElementById("lessonsContainer");
+    if (!container) return;
     container.innerHTML = "";
 
     appState.lessons.forEach((lesson, index) => {
@@ -207,36 +239,46 @@ function renderLessons() {
 
 function openLessonModal(id) {
     const lesson = appState.lessons.find(l => l.id === id);
+    if (!lesson) return;
     appState.currentLesson = lesson;
+    
     document.getElementById("modalTitle").innerText = lesson.title;
     document.getElementById("modalDesc").innerText = lesson.desc;
     document.getElementById("modalCode").innerText = lesson.code;
     document.getElementById("compilerConsole").style.display = "none";
 
     const hasSubmitted = appState.submissions.some(s => 
-        s && s.studentEmail && s.studentEmail.toLowerCase() === appState.currentUser.email.toLowerCase() && s.lessonTitle === lesson.title
+        s && s.studentEmail && appState.currentUser && s.studentEmail.toLowerCase() === appState.currentUser.email.toLowerCase() && s.lessonTitle === lesson.title
     );
 
     const form = document.getElementById("submissionForm");
     const msg = document.getElementById("alreadySubmittedMsg");
 
     if (hasSubmitted) {
-        form.style.display = "none";
-        msg.style.display = "block";
+        if (form) form.style.display = "none";
+        if (msg) msg.style.display = "block";
     } else {
-        form.style.display = "block";
-        msg.style.display = "none";
-        document.getElementById("submissionForm").reset();
+        if (form) {
+            form.style.display = "block";
+            form.reset();
+        }
+        if (msg) msg.style.display = "none";
     }
 
     document.getElementById("lessonModal").style.display = "flex";
 }
 
-function closeLessonModal() { document.getElementById("lessonModal").style.display = "none"; }
+function closeLessonModal() { 
+    const modal = document.getElementById("lessonModal");
+    if (modal) modal.style.display = "none"; 
+}
 
 function testCodeRun() {
-    const code = document.getElementById("projectCode").value.trim();
+    const codeElem = document.getElementById("projectCode");
     const consoleBox = document.getElementById("compilerConsole");
+    if (!codeElem || !consoleBox) return;
+
+    const code = codeElem.value.trim();
     consoleBox.style.display = "block";
 
     if (code.length < 10) {
@@ -253,14 +295,17 @@ function testCodeRun() {
 
 async function submitProject(e) {
     e.preventDefault();
+    const codeElem = document.getElementById("projectCode");
+    const mediaElem = document.getElementById("projectMedia");
+    if (!codeElem || !mediaElem) return;
 
     appState.submissions.push({
         id: Date.now(),
         studentName: appState.currentUser.name,
         studentEmail: appState.currentUser.email.toLowerCase(),
         lessonTitle: appState.currentLesson.title,
-        code: document.getElementById("projectCode").value,
-        media: document.getElementById("projectMedia").value,
+        code: codeElem.value,
+        media: mediaElem.value,
         status: "Күтілуде"
     });
 
@@ -272,6 +317,7 @@ async function submitProject(e) {
 // 5. МЕНТОР ПАНЕЛІ
 function renderMentorTable() {
     const tbody = document.getElementById("mentorTableBody");
+    if (!tbody) return;
     tbody.innerHTML = "";
 
     if (!appState.submissions || appState.submissions.length === 0) {
@@ -304,7 +350,8 @@ function viewStudentCode(name, lesson, id) {
 }
 
 function closeViewCodeModal() {
-    document.getElementById("viewCodeModal").style.display = "none";
+    const modal = document.getElementById("viewCodeModal");
+    if (modal) modal.style.display = "none";
 }
 
 async function approveSub(id) {
